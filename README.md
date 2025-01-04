@@ -10,40 +10,11 @@ This repository contains the analysis pipelines, data preprocessing scripts, and
 
 ---
 
-## Installation
-Clone this repository and install dependencies:
-
-```bash
-git clone https://github.com/yourusername/dendritic-cell-analysis.git
-cd dendritic-cell-analysis
-pip install -r requirements.txt
-```
-
-Refer to the [prerequisites](#prerequisites) for additional setup information.
-
----
-
-## Prerequisites
-- **Python:** >= 3.8
-- **R:** >= 4.0
-- **Required Packages:**
-  - Scanpy
-  - Seurat
-  - Harmony
-  - Scvelo
-  - ClusterProfiler
-  - Limma
-  - DESeq2
-  - ggplot2
-  - 
-
----
-
-
 ## Data and Results
-- **Raw Data:** Input datasets are stored in the `data/` folder.
-- **Intermediate Results:** Workflow outputs, including processed matrices, are stored in `results/`.
-- **Figures:** Publication-quality plots and graphs are generated in `figures/`.
+- **Raw Data:** Raw Input datasets are available @ GEO.
+- **Input Data** Input data in the tabular format used for analysis are available at the root directory of each section and those of single-cell multi-omics are available @ Figshare due to file size limitations.
+- **Figures and tables:** Graphs and tables that appeared in the manuscript are generated in `Outputs/` folders of each section.
+- **Processed single-cell multi-omics results:** The processed Seurat (rds) or Scanpy (h5ad) objects are available @ Figshare.
 
 ---
 
