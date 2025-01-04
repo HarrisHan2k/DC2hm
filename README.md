@@ -30,7 +30,12 @@ Refer to the [prerequisites](#prerequisites) for additional setup information.
   - Scanpy
   - Seurat
   - Harmony
-  - scRNA-seq-specific libraries
+  - Scvelo
+  - ClusterProfiler
+  - Limma
+  - DESeq2
+  - ggplot2
+  - 
 
 ---
 
