@@ -12,7 +12,7 @@ This repository contains the analysis pipelines, data preprocessing scripts, and
 
 ## Data and Results
 - **Raw Data:** Raw Input datasets are available @ GEO.
-- **Input Data** Input data in the tabular format used for analysis are available at the root directory of each section and those of single-cell multi-omics are available @ Figshare due to file size limitations.
+- **Input Data** Tabular-format input data used for analysis are available at the root directory of each section and those of single-cell omics are available @ Figshare due to file size limitations.
 - **Figures and tables:** Graphs and tables that appeared in the manuscript are generated in `Outputs/` folders of each section.
 - **Processed single-cell multi-omics results:** The processed Seurat (rds) or Scanpy (h5ad) objects are available @ Figshare.
 
