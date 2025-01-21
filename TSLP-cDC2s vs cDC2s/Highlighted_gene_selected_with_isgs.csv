@@ -1,0 +1,34 @@
+Gene,Annoataion
+ITGAX,cDC2 marker
+CD1C,cDC2 marker
+CLEC10A,cDC2 marker
+CD80,Maturation
+CD83,Maturation
+CD86,Maturation
+LAMP3,Maturation
+CD40,Maturation
+CCR7,Migaration & chemotaxis
+MYO1C,Migaration & chemotaxis
+FSCN1,Migaration & chemotaxis
+CD44,Migaration & chemotaxis
+MARCKS,Migaration & chemotaxis
+CD274,Regulatory
+JAG1,Regulatory
+CD200,Regulatory
+SOCS2,Regulatory
+FAS,Regulatory
+PVR,Treg induction
+ALDH1A2,Treg induction
+EBI3,Treg induction
+CCL22,Treg induction
+ICOSLG,Treg induction
+IL7R,IL7R signaling
+CRLF2,IL7R signaling
+STAT5A,IL7R signaling
+CCL17,IL7R signaling
+REL,C-Rel
+ISG15,ISGs
+MX2,ISGs
+IFI16,ISGs
+OASL,ISGs
+IFIT2,ISGs
