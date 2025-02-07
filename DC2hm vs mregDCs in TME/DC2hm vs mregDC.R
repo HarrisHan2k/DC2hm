@@ -8,7 +8,7 @@ library(enrichplot)
 set.seed(0822)
 setwd('/media/dell/0E54E2B554E29EA9/HanRunpeng/mregDC_project/Lab_Sequencing_Data/Code deposit/DC2hm vs mregDCs in TME')
 # Visualization of scRNA-seq profiles -------------------------------------
-  # Read Seurat object
+  # Read Seurat object which is available @ FigShare
 combined.object <- readRDS('combined.object.dc2hm.mregdc.rds')
 
   # Figure S8B, t-SNE plot of binary-grouped profiles
