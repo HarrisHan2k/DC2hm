@@ -17,7 +17,7 @@ library(ggrastr)
 library(BSgenome.Hsapiens.UCSC.hg38)
 library(future)
 library(ggsci)
-setwd(0822)
+set.seed(0822)
 setwd('/media/dell/0E54E2B554E29EA9/HanRunpeng/mregDC_project/Lab_Sequencing_Data/Code deposit/scMulti-omics analysis')
 # The preprocessing and clustering analysis was performed by Qiuchen Zhao
 # Start with this processed object which could be obtained @GEO: GSE267255
@@ -188,10 +188,10 @@ ggsave('Outputs/figures/DE_peaks_dc2hm_enrichment.pdf',
 # Coverage plots for Figure 1M----------------------------------------------------------
   # The fragments file is available @ GEO: GSE267255
 UpdatePath(multiomic.object.cdcs@assays$ATAC@fragments[[1]], '../../Donor_6_ATAC-seq/cellranger_arc/D6_ATAC/atac_fragments.tsv.gz')
-for (i in c('CLEC9A','CD1C','FSCN1', 'PVR', 'CRLF2','STAT5A')) {
+for (i in c('CLEC9A','CD1C','FSCN1', 'PVR', 'CRLF2','STAT5A','CD200')) {
   pdf(paste0('Outputs/figures/', i, '_coverage_plot.pdf'),
       width=3.5, height=3)
-  plot(CoveragePlot(object = multiomic.object, region = i, features = i, 
+  plot(CoveragePlot(object = multiomic.object.cdcs, region = i, features = i, 
                     expression.assay = "SCT", assay = 'ATAC',
                     extend.upstream = 2000, extend.downstream = 2000)&
          scale_fill_manual(values =c('#C5E524', '#38C2E5','#384C94','#E679C5')))
