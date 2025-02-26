@@ -64,9 +64,9 @@ spleen.vs.tumor.markers <- spleen.vs.tumor.markers[!(spleen.vs.tumor.markers$pct
 spleen.vs.tumor.markers <- spleen.vs.tumor.markers[order(spleen.vs.tumor.markers$avg_log2FC,
                                                          decreasing = T),]
 write.xlsx(list('DE resuslts'=spleen.vs.tumor.markers,
-                'Spleen Up'=spleen.vs.tumor.markers[spleen.vs.tumor.markers$avg_log2FC>0.25&
+                'Spleen Up'=spleen.vs.tumor.markers[spleen.vs.tumor.markers$avg_log2FC>1&
                                                      spleen.vs.tumor.markers$p_val_adj<0.05,],
-                'Spleen Down'=spleen.vs.tumor.markers[spleen.vs.tumor.markers$avg_log2FC <(-0.25)&
+                'Spleen Down'=spleen.vs.tumor.markers[spleen.vs.tumor.markers$avg_log2FC <(-1)&
                                                        spleen.vs.tumor.markers$p_val_adj<0.05,]),
            'Outputs/tables/Spleen_vs_tumor_markers.xlsx', rowNames=T)
 
