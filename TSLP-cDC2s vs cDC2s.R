@@ -201,9 +201,6 @@ cat("Performing GC-RMA normalization (this may take a few minutes)...\n")
 eset <- gcrma(raw_data)
 cat("Normalization with GC-RMA complete. ✅\n")
 
-# Step 4: Annotation, Filtering, and Scaling
-# -----------------------------------------------------------------
-cat("Filtering and scaling data...\n")
 # Get feature annotation data from GEO
 gse <- getGEO("GSE59237", GSEMatrix = TRUE)
 feature_data_geo <- Biobase::fData(gse[[1]])
@@ -211,21 +208,14 @@ feature_data_geo <- Biobase::fData(gse[[1]])
 # Extract the normalized expression matrix (already log2-transformed by gcrma)
 expression_matrix <- Biobase::exprs(eset)
 
-# 4a. "Probes with no annotation were removed"
 probes_to_keep <- rownames(feature_data_geo[feature_data_geo$`Gene Symbol` != "", ])
 expression_matrix <- expression_matrix[intersect(rownames(expression_matrix), probes_to_keep), ]
-
-# 4b. "Genes with small profile ranges...were filtered out"
 gene_ranges <- apply(expression_matrix, 1, function(x) max(x) - min(x))
 range_cutoff <- median(gene_ranges)
 expression_matrix <- expression_matrix[gene_ranges > range_cutoff, ]
-
-# 4c. "expression levels were centered and reduced" (Z-score scaling)
 expression_matrix <- t(scale(t(expression_matrix)))
 
-# Step 5: Differential Expression Analysis (TSLP vs. Fresh)
-# -----------------------------------------------------------------
-cat("Running differential expression analysis...\n")
+#  Differential Expression Analysis (TSLP vs. Fresh)
 # Define groups using the sample names from the normalized data
 sample_names <- sampleNames(eset)
 groups <- character(length(sample_names))
@@ -243,8 +233,6 @@ cont.matrix <- makeContrasts(TSLP_vs_Fresh = TSLP_6h - Control_0h, levels = desi
 fit2 <- contrasts.fit(fit, cont.matrix)
 fit2 <- eBayes(fit2)
 
-# Step 6 & 7: Create and Clean the Final DE Table
-# -----------------------------------------------------------------
 cat("Generating final results...\n")
 full_results <- topTable(fit2, coef = "TSLP_vs_Fresh", number = Inf, sort.by = "P")
 full_results$Gene_Symbol <- feature_data_geo[rownames(full_results), "Gene Symbol"]
@@ -287,7 +275,7 @@ ggvenn(venn_list_down, fill_color = c("#F8766D", "#00BFC4"), stroke_size = 0.5, 
 ggsave("Outputs/figures/Venn_Downregulated_TSLP_vs_Fresh_GCRMA.pdf", width = 5, height = 4)
 
 
-# Your RNA-seq TSLP vs. Fresh results
+# RNA-seq TSLP vs. Fresh results
 rnaseq_tslp_fresh_df <- de.result.tslp.vs.fresh
 rnaseq_tslp_fresh_df$Gene_Symbol <- rownames(rnaseq_tslp_fresh_df)
 rnaseq_tslp_fresh_df <- rnaseq_tslp_fresh_df[, c("Gene_Symbol",
@@ -295,7 +283,7 @@ rnaseq_tslp_fresh_df <- rnaseq_tslp_fresh_df[, c("Gene_Symbol",
                                                  "t", "P.Value", 
                                                  "adj.P.Val", "B")]
 
-# Your RNA-seq TSLP vs. Medium results
+# RNA-seq TSLP vs. Medium results
 rnaseq_tslp_med_df <- de.result.tslp.vs.med
 rnaseq_tslp_med_df$Gene_Symbol <- rownames(rnaseq_tslp_med_df)
 rnaseq_tslp_med_df <- rnaseq_tslp_med_df[, c("Gene_Symbol", 
@@ -309,9 +297,7 @@ microarray_final_df$Gene_Symbol <- gsub("\\.\\d+$", "", rownames(microarray_fina
 microarray_final_df <- microarray_final_df[, c("Gene_Symbol", "logFC", "AveExpr", "t", "P.Value", "adj.P.Val", "B")]
 
 
-# Step 2: Get the lists of overlapping genes from the Venn diagram analysis
-# -------------------------------------------------------------------------
-# This entire section for creating the Venn diagram lists is UNCHANGED, as it is correct.
+# Get the lists of overlapping genes from the Venn diagram analysis
 sig_threshold_adj_p <- 0.05
 microarray_sig_genes <- final_de_table[final_de_table$adj.P.Val < sig_threshold_adj_p, ]
 microarray_up <- gsub("\\.\\d+$", "", rownames(microarray_sig_genes[microarray_sig_genes$logFC > 1, ]))
@@ -323,11 +309,6 @@ rnaseq_down <- rownames(de.result.tslp.vs.fresh[de.result.tslp.vs.fresh$logFC < 
 # Find the intersection
 overlap_upregulated_genes <- intersect(microarray_up, rnaseq_up)
 overlap_downregulated_genes <- intersect(microarray_down, rnaseq_down)
-
-
-# ############################################################################### #
-# ### START OF CORRECTED SECTION TO BUILD EXCEL SHEETS ###
-# ############################################################################### #
 
 # Prepare the RNA-seq results table (this was already correct)
 rnaseq_stats_for_merge <- de.result.tslp.vs.fresh %>%
@@ -344,32 +325,27 @@ microarray_stats_for_merge <- final_de_table %>%
   ungroup() %>%
   select(Gene_Symbol, logFC, adj.P.Val)
 
-# Create the detailed dataframe for UPREGULATED overlap. This will now have the correct number of rows.
+# Create the detailed dataframe for UPREGULATED overlap. 
 overlap_up_df <- data.frame(Gene_Symbol = overlap_upregulated_genes) %>%
   left_join(rnaseq_stats_for_merge, by = "Gene_Symbol") %>%
   rename(logFC_RNAseq = logFC, adj.P.Val_RNAseq = adj.P.Val) %>%
   left_join(microarray_stats_for_merge, by = "Gene_Symbol") %>%
   rename(logFC_Microarray = logFC, adj.P.Val_Microarray = adj.P.Val)
 
-# Create the detailed dataframe for DOWNREGULATED overlap. This will also have the correct number of rows.
+# Create the detailed dataframe for DOWNREGULATED overlap. 
 overlap_down_df <- data.frame(Gene_Symbol = overlap_downregulated_genes) %>%
   left_join(rnaseq_stats_for_merge, by = "Gene_Symbol") %>%
   rename(logFC_RNAseq = logFC, adj.P.Val_RNAseq = adj.P.Val) %>%
   left_join(microarray_stats_for_merge, by = "Gene_Symbol") %>%
   rename(logFC_Microarray = logFC, adj.P.Val_Microarray = adj.P.Val)
 
-
-
-# --- NEW SECTION: Find unique genes and create dataframes for them ---
-cat("Identifying unique genes for each dataset...\n")
-
-# 1. Get the lists of unique genes using setdiff()
+# Get the lists of unique genes using setdiff()
 unique_up_rnaseq    <- setdiff(rnaseq_up, microarray_up)
 unique_down_rnaseq  <- setdiff(rnaseq_down, microarray_down)
 unique_up_microarray   <- setdiff(microarray_up, rnaseq_up)
 unique_down_microarray <- setdiff(microarray_down, rnaseq_down)
 
-# 2. Create dataframes with stats for the unique genes
+# Create dataframes with stats for the unique genes
 unique_up_rnaseq_df <- data.frame(Gene_Symbol = unique_up_rnaseq) %>%
   left_join(rnaseq_stats_for_merge, by = "Gene_Symbol")
 
@@ -383,7 +359,6 @@ unique_down_microarray_df <- data.frame(Gene_Symbol = unique_down_microarray) %>
   left_join(microarray_stats_for_merge, by = "Gene_Symbol")
 
 
-# --- UPDATED: Create a named list of ALL data frames for export ---
 list_of_datasets <- list(
   "RNAseq_TSLP_vs_Fresh" = rnaseq_tslp_fresh_df,
   "Microarray_TSLP_vs_Fresh" = microarray_final_df,
@@ -396,21 +371,19 @@ list_of_datasets <- list(
 )
 
 # Write the list to a single .xlsx file
-library(openxlsx)
 write.xlsx(list_of_datasets, 
            file = "Outputs/tables/Comprehensive_Analysis_Summary.xlsx", 
            rowNames = FALSE)
-
-# ############################################################################### #
+# GO analysis for each compartment
 cat("\n--- Starting Gene Ontology Analysis for Venn Segments ---\n")
 
-# Step 1: Define the gene universe
+# Define the gene universe
 universe_rnaseq <- rownames(de.result.tslp.vs.fresh)
 universe_microarray <- gsub("\\.\\d+$", "", rownames(final_de_table))
 common_universe <- intersect(universe_rnaseq, universe_microarray)
 cat(paste("Using a common universe of", length(common_universe), "genes for GO analysis.\n"))
 
-# Step 2: Loop through datasets and perform GO analysis
+# Loop through datasets and perform GO analysis
 go_results_list <- list()
 
 for (set_name in names(list_of_datasets)[3:8]) {
@@ -440,11 +413,7 @@ for (set_name in names(list_of_datasets)[3:8]) {
     
     # Store the full results
     go_results_list[[set_name]] <- as.data.frame(ego@result)
-    
-    # --- FINAL FIX APPLIED HERE ---
-    # We will now create the dot plot manually with ggplot2 to avoid errors.
-    
-    # First, try to simplify if there are many terms.
+
     plot_object <- ego # Default to the original object
     title_suffix <- ""
     if (nrow(ego@result) > 30) {
@@ -465,12 +434,8 @@ for (set_name in names(list_of_datasets)[3:8]) {
       }
     }
     
-    # Manually create the dot plot using ggplot2 from the results dataframe
-    # This is much more stable than the built-in dotplot function.
     plot_df <- as.data.frame(plot_object) %>%
       top_n(20, wt = -p.adjust)
-    
-    # Reorder factor levels for plotting
     plot_df$Description <- factor(plot_df$Description, levels = rev(plot_df$Description))
     
     p <- ggplot(plot_df, aes(x = GeneRatio, y = Description)) +
@@ -490,147 +455,8 @@ for (set_name in names(list_of_datasets)[3:8]) {
   }
 }
 
-# Step 3: Save results to a single Excel file
 if (length(go_results_list) > 0) {
   excel_filename <- "Outputs/tables/GO_Analysis_Venn_Diagram_Parts.xlsx"
   write.xlsx(go_results_list, file = excel_filename, rowNames = FALSE)
   cat(paste("\nAll GO analysis results have been compiled into:", excel_filename, "📄\n"))
 }
-
-cat("--- Gene Ontology Analysis Complete ---\n\n")
-# LC markers --------------------------------------------------------------
-de.result.tslp.vs.fresh.show <- de.result.tslp.vs.fresh[lc.markers,]
-de.result.tslp.vs.fresh.show$Gene <- factor(rownames(de.result.tslp.vs.fresh.show),
-                                            levels = rownames(de.result.tslp.vs.fresh.show))
-p_rna_seq <- ggplot(de.result.tslp.vs.fresh.show,
-       aes(y=logFC,x=Gene, fill=-log10(adj.P.Val)))+
-  geom_bar(stat = 'identity')+
-  theme_classic()+
-  scale_fill_gradient(low = '#F686BD', high = '#d930a6')+
-  labs(y='Log2FC: TSLP-cDC2s vs Fresh cDC2s', x=NULL)+
-  theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = .5))+
-  geom_hline(yintercept = c(0), color='black')+
-  geom_hline(yintercept = c(1), color='lightgrey')
-p_rna_seq
-final_de_table.show <- final_de_table[lc.markers,]
-final_de_table.show$Gene <- factor(rownames(de.result.tslp.vs.fresh.show),
-                                            levels = rownames(de.result.tslp.vs.fresh.show))
-p_microarray <- ggplot(final_de_table.show,
-       aes(y=logFC,x=Gene, fill=-log10(adj.P.Val)))+
-  geom_bar(stat = 'identity')+
-  theme_classic()+
-  scale_fill_gradient(low = '#F686BD', high = '#d930a6')+
-  labs(y='Log2FC: TSLP-cDC2s vs Fresh cDC2s', x=NULL)+
-  theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = .5))+
-  geom_hline(yintercept = c(0), color='black')+
-  geom_hline(yintercept = c(1), color='lightgrey')
-
-  
-ggarrange(p_rna_seq,p_microarray)
-
-
-
-
-
-# tslp vs. med ------------------------------------------------------------
-de.result.tslp.vs.med.show <- de.result.tslp.vs.med[lc.markers,]
-de.result.tslp.vs.med.show$Gene <- factor(rownames(de.result.tslp.vs.med.show),
-                                            levels = rownames(de.result.tslp.vs.med.show))
-p_rna_seq <- ggplot(de.result.tslp.vs.med.show,
-                    aes(y=logFC,x=Gene, fill=-log10(adj.P.Val)))+
-  geom_bar(stat = 'identity')+
-  theme_classic()+
-  scale_fill_gradient(low = '#F686BD', high = '#d930a6')+
-  labs(y='Log2FC: TSLP-cDC2s vs Med cDC2s', x=NULL)+
-  theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = .5))+
-  geom_hline(yintercept = c(0), color='black')+
-  geom_hline(yintercept = c(1), color='lightgrey')
-p_rna_seq
-
-
-
-# Heatmap -----------------------------------------------------------------
-gene.len <- read.csv('../TRA_vs_PAMP/Gene_length.csv')
-# Select the 'Fresh cDC2s' columns from your data
-fresh_counts <- counts.tslp.vs.fresh[, 1:3]
-colnames(fresh_counts) <- c("Fresh_1", "Fresh_2", "Fresh_3")
-
-# Select the 'TSLP cDC2s' columns
-tslp_counts <- counts.tslp.vs.fresh[, 4:6]
-colnames(tslp_counts) <- c("TSLP_1", "TSLP_2", "TSLP_3")
-
-# Select the 'Medium cDC2s' columns
-med_counts <- counts.med.vs.fresh[, 1:3] 
-colnames(med_counts) <- c("Medium_1", "Medium_2", "Medium_3")
-
-# Find the common genes shared across all datasets
-common_genes <- intersect(rownames(fresh_counts), intersect(rownames(tslp_counts), rownames(med_counts)))
-
-# Combine them into a single count matrix
-combined_counts <- cbind(fresh_counts[common_genes, ], 
-                         med_counts[common_genes, ], 
-                         tslp_counts[common_genes, ])
-
-
-# --- Step 2: Process Your Gene Length Data ---
-
-# Rename the columns of your 'gene.len' object for clarity
-colnames(gene.len) <- c("gene_name", "length")
-
-# Set the row names to be the gene names for easy lookup
-rownames(gene.len) <- gene.len$gene_name
-
-
-# --- Step 3: Calculate TPM from Raw Counts ---
-
-# Ensure the genes in your counts and length data match
-common_genes_with_length <- intersect(rownames(combined_counts), rownames(gene.len))
-counts_final <- combined_counts[common_genes_with_length, ]
-lengths_final <- gene.len[common_genes_with_length, "length"]
-
-# 1. Divide read counts by gene length in kilobases (RPK)
-rpk <- counts_final / (lengths_final / 1000)
-
-# 2. Calculate the "per million" scaling factor for each sample
-scaling_factor <- colSums(rpk) / 1e6
-
-# 3. Divide RPK values by the scaling factor to get TPM
-tpm_matrix <- t(t(rpk) / scaling_factor)
-
-cat("TPM matrix calculated successfully.\n")
-
-
-# --- Step 4: Generate the Heatmap ---
-
-
-# Subset the TPM matrix to only these genes
-# We use intersect to avoid errors if a gene is not found
-lc.markers <- c("CD1A", "CD207",'CCR6','CCL17','MMP12','CD209','CD14')
-genes_found <- intersect(lc.markers, rownames(tpm_matrix))
-tpm_subset <- tpm_matrix[genes_found, ]
-
-# Scale the data by row (Z-score). This highlights relative changes
-# for each gene across the conditions, which is best for visualization.
-scaled_tpm <- t(scale(t(tpm_subset)))
-
-# Create an annotation data frame for the columns
-annotation_col <- data.frame(
-  Condition = factor(rep(c("Fresh", "Medium", "TSLP"), each = 3))
-)
-rownames(annotation_col) <- colnames(scaled_tpm)
-# Removing outliers
-scaled_tpm <- scaled_tpm[,!colnames(scaled_tpm) %in% c('Fresh_3',
-                                                      'Medium_2',
-                                                      'TSLP_3')]
-# Generate and save the heatmap
-pheatmap(scaled_tpm,
-         annotation_col = annotation_col,
-         cluster_rows = F,          # Cluster genes based on similarity
-         cluster_cols = FALSE,         # Keep samples in the Fresh-Med-TSLP order
-         show_colnames = TRUE,
-         main = "LC markers",
-         fontsize_row = 10,         # Use the viridis color palette
-         filename = "Outputs/figures/TPM_Heatmap_LC_Genes.pdf",
-         width = 6, height = 5)
-
-cat("Heatmap saved to Outputs/figures/TPM_Heatmap_TSLP_Genes.pdf\n")
