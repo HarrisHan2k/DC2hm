@@ -4,9 +4,9 @@ p_load(sva, limma, pheatmap, ggplot2, ggplotify, dplyr, openxlsx,
        ggrastr, enrichplot, ggvenn,affy,gcrma, pheatmap,GEOquery, ggpubr,
        Biobase) 
 set.seed(0822)
-configure.args <- c(preprocessCore = "--disable-threading")
+configure.args <- c(preprocessCore = "--disable-threading") # The multi-core GCRMA analysis seems to be troublesome
 options(configure.args = configure.args)
-setwd('/media/dell/0E54E2B554E29EA9/HanRunpeng/mregDC_project/Lab_Sequencing_Data/Code deposit/TSLP-cDC2s vs cDC2s (copy)/')
+setwd('TSLP-cDC2s vs cDC2s')
 # TSLP cDC2s vs fresh cDC2s -----------------------------------------------
   # Read count matrix, note that this experiments also include two inhibitor-treated groups
 counts.tslp.vs.fresh <- read.csv('Counts_combined.csv', row.names = 1)
@@ -30,7 +30,6 @@ write.xlsx(list('DE results'=de.result.tslp.vs.fresh[order(de.result.tslp.vs.fre
                 'Upregulated'=de.result.tslp.vs.fresh[de.result.tslp.vs.fresh$logFC > 1 & de.result.tslp.vs.fresh$adj.P.Val < 0.05,],
                 'Downregulated'=de.result.tslp.vs.fresh[de.result.tslp.vs.fresh$logFC < (-1) & de.result.tslp.vs.fresh$adj.P.Val < 0.05,]),
            'Outputs/tables/TSLP_vs_Fresh_cDC2_DEGs.xlsx', rowNames =T)
-  # Figure 5G, barplot showing DC2hm marker and ISG induction by TSLP
 gene.to.show <- read.csv('Highlighted_gene_selected.csv')
 de.result.tslp.vs.fresh.show <- de.result.tslp.vs.fresh[gene.to.show$Gene,]
 de.result.tslp.vs.fresh.show$Gene <- factor(rownames(de.result.tslp.vs.fresh.show),
@@ -51,7 +50,6 @@ d6.object <- readRDS('../scRNA-seq analysis/Outputs/rds/Dnr6_cDC2s.rds')
 d6.object <- AddModuleScore(d6.object,
                             features = list(rownames(de.result.tslp.vs.fresh)[1:500]),
                             name = 'tslp.score')
-  # Figure 5I,  of TSLP-cDC2 signatures
 rasterize(FeaturePlot(d6.object, features = 'tslp.score1',pt.size = 0.1)+
             scale_color_viridis_c(option = 4),
           dpi = 300)
@@ -86,7 +84,6 @@ write.xlsx(list('DE results'=de.result.med.vs.fresh,
                 'Upregulated'=de.result.med.vs.fresh[de.result.med.vs.fresh$logFC>1 & de.result.med.vs.fresh$P.Value < 0.05,],
                 'Downregulated'=de.result.med.vs.fresh[de.result.med.vs.fresh$logFC<(-1) & de.result.med.vs.fresh$P.Value < 0.05,]),
            'Outputs/tables/Med_cDC2s_vs_Fresh_cDC2_DEGs.xlsx',rowNames=T)
-  # Figure S6B, barplot comparing the log2FCs
 tslp.inducd.gene <- c('CD80', 'CD40', 'CD86', 'FSCN1', 'CD44', 'ICAM1',
                       'REL','CRLF2', 'IL7R', 'STAT5A',  'CCL17',
                       'SOCS2', 'CD274', 'CD200', 'ALDH1A2', 'PVR',
@@ -129,7 +126,6 @@ write.xlsx(list('DE results'=de.result.tslp.vs.med,
                 'Downregulated'=de.result.tslp.vs.med[de.result.tslp.vs.med$logFC<(-1) & de.result.tslp.vs.med$P.Value < 0.05,]),
            'Outputs/tables/TSLP_cDC2s_vs_Med_cDC2_DEGs.xlsx',rowNames=T)
 # GSEA --------------------------------------------------------------------
-  # Figure 5H, GSEA
 de.result.tslp.vs.fresh <- de.result.tslp.vs.fresh[order(de.result.tslp.vs.fresh$logFC,
                                                          decreasing = T),]
 de.result.tslp.vs.fresh.ranked <-de.result.tslp.vs.fresh$logFC
