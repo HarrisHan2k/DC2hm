@@ -20,11 +20,12 @@ library(BSgenome.Hsapiens.UCSC.hg38)
 library(future)
 library(ggsci)
 set.seed(0822)
-setwd('/media/dell/0E54E2B554E29EA9/HanRunpeng/mregDC_project/Lab_Sequencing_Data/Code deposit/scMulti-omics analysis')
-# The preprocessing and clustering analysis was performed by Qiuchen Zhao
+setwd('scMulti-omics analysis')
+# The preprocessing and clustering analysis was performed by Qiu-Chen
 # Start with this processed object which could be obtained @GEO: GSE267255
 # Clustering and marker analysis on cDCs ----------------------------------
 multiomic.object <- readRDS('hu_spleen_multiomics.rds')
+# Update nomenclature
 multiomic.object <- RenameIdents(multiomic.object, c('mDC1'='cDC1',
                                                      'mDC2'='cDC2',
                                                      'mDC2_stressed'='cDC2_UPR',
@@ -66,7 +67,6 @@ rasterize(DimPlot(multiomic.object,
                   reduction = 'umap'),
           dpi = 300)
 ggsave('Outputs/figures/Sup_fig_UMAP_peaks_all.pdf', width = 6, height = 4)
-  # Figure 1F, UMAP of scATAC peaks
 multiomic.object.cdcs <- multiomic.object[,Idents(multiomic.object) %in% c('cDC1', 
                                                                       'cDC2',
                                                                       'DC2pre-hm',
@@ -76,7 +76,6 @@ multiomic.object.cdcs$transferred_label <- Idents(multiomic.object.cdcs)
 multiomic.object.cdcs$transferred_label <- factor(multiomic.object.cdcs$transferred_label,
                                                   levels = c('cDC1', 'cDC2',
                                                              'DC2pre-hm', 'DC2hm'))
-# snRNA-seq clustering
 DefaultAssay(multiomic.object.cdcs) <- 'RNA'
 multiomic.object.cdcs <- NormalizeData(multiomic.object.cdcs) %>% FindVariableFeatures() %>% ScaleData() %>% RunPCA()
 multiomic.object.cdcs <- RunUMAP(multiomic.object.cdcs, dims = 1:5)
@@ -92,7 +91,6 @@ DotPlot(multiomic.object.cdcs,
   scale_color_viridis_c()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5))
 ggsave('Outputs/figures/Dotplot_snRNA-seq_markers.pdf', width = 10, height = 4)
-
 
 DefaultAssay(multiomic.object.cdcs) <- 'peaks'
 multiomic.object.cdcs <- RunTFIDF(multiomic.object.cdcs) %>% FindTopFeatures(min.cutoff = 'q0') %>% RunSVD() %>% RunUMAP(reduction='lsi', dims=2:10)
@@ -130,11 +128,10 @@ markers <- FindAllMarkers(multiomic.object.cdcs,
                           assay = 'peaks',test.use = 'LR',
                           latent.vars = 'nCount_peaks') 
 
-
 # Correlation with scRNA-seq ----------------------------------------------
-d6.scrna <- readRDS('../scRNA-seq analysis/Outputs/rds/Dnr6_cDCs.rds')
+d6.scrna <- readRDS('Dnr6_cDCs.rds') # Could be found @ GEO
 DotPlot(d6.scrna,
-        features = read.csv('../scRNA-seq analysis/Highlighted_gene_selected.csv')$Gene)+
+        features = read.csv('Highlighted_gene_selected.csv')$Gene)+
   scale_color_viridis_c()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5))
 ggsave('Outputs/figures/Dotplot_scRNA-seq_markers.pdf', width = 10, height = 4)
@@ -144,7 +141,6 @@ multiomic.object.cdcs$technique <- rep('Donor 6 snRNA-seq',
                                        ncol(multiomic.object.cdcs))
 merged.object.snsc <- merge(d6.scrna,
                             multiomic.object.cdcs)
-# --- Standard Normalization and Feature Selection for each object ---
 for (i in 1:length(object.list)) {
   object.list[[i]] <- NormalizeData(object.list[[i]], verbose = FALSE)
   object.list[[i]] <- FindVariableFeatures(object.list[[i]], 
@@ -152,25 +148,17 @@ for (i in 1:length(object.list)) {
                                            nfeatures = 2000, verbose = FALSE)
 }
 
-# --- Integration ---
-# Select features that are repeatedly variable across datasets for integration
 integ_features <- SelectIntegrationFeatures(object.list = object.list)
 
-# Find integration anchors using the standard workflow
 integ_anchors <- FindIntegrationAnchors(
   object.list = object.list,
   anchor.features = integ_features,
   normalization.method = "LogNormalize" # Specify the method used
 )
 
-# Integrate the data, which creates a new 'integrated' assay
 integrated_object <- IntegrateData(anchorset = integ_anchors)
-
-# --- Joint Clustering and Visualization ---
-# IMPORTANT: Switch the default assay to 'integrated' for downstream analysis
 DefaultAssay(integrated_object) <- "integrated"
 
-# Scale the integrated data, run PCA, UMAP, and find clusters
 integrated_object <- ScaleData(integrated_object, verbose = FALSE)
 integrated_object <- RunPCA(integrated_object, verbose = FALSE)
 integrated_object <- RunUMAP(integrated_object, dims = 1:10)
@@ -195,10 +183,8 @@ rasterize(DimPlot(integrated_object, reduction = "umap",
                   cols = c('#C5E524', '#38C2E5','#384C94','#E679C5')),
           dpi = 300)
 ggsave('Outputs/figures/Integrated_UMAP_split_plot.pdf', width = 14, height = 6)
-# Extract metadata from your integrated Seurat object
 metadata <- integrated_object@meta.data
 
-# The Idents() are automatically stored in the 'active.ident' column
 # Let's check the first few rows to confirm
 head(metadata)
 proportions_df <- metadata %>%
@@ -248,56 +234,6 @@ integrated_object$celltype_technique <- factor(integrated_object$celltype_techni
 DefaultAssay(integrated_object) <- 'RNA'
 integrated_object <- NormalizeData(integrated_object) %>% ScaleData(features = rownames(integrated_object))
 Idents(integrated_object) <- 'celltype_technique'
-DoHeatmap(integrated_object,
-        features = c(read.csv('../scRNA-seq analysis/Highlighted_gene_selected.csv')$Gen,
-                     'MALAT1','MED13L',"ZFAND3",'MT-CO1',"MT-CO2","MT-ATP6",
-                     "NEAT1","MIR155HG","LINC01619",'RPL10',"RPL13" ,"RPS18",
-                     "ACTB","GAPDH","VIM",
-                     "HLA-DRA","HLA-DRB1",'B2M'),raster = F)+
-  scale_fill_viridis_c()
-ggsave('Outputs/figures/Heatmap_markers_integrated.pdf',
-       width = 12, height = 10)
-  # DC1
-DoHeatmap(integrated_object[,integrated_object$celltype_int=='cDC1'],
-          features = c(read.csv('../scRNA-seq analysis/Highlighted_gene_selected.csv')$Gen[1:3],
-                       'MALAT1','MED13L',"ZFAND3",'MT-CO1',"MT-CO2","MT-ATP6",
-                       "NEAT1","MIR155HG","LINC01619",'RPL10',"RPL13" ,"RPS18",
-                       "ACTB","GAPDH","VIM",
-                       "HLA-DRA","HLA-DRB1",'B2M'),raster = F)+
-  scale_fill_viridis_c()
-ggsave('Outputs/figures/Heatmap_markers_integrated_cDC1.pdf',
-       width = 12, height = 8)
-
-DoHeatmap(integrated_object[,integrated_object$celltype_int=='cDC2'],
-          features = c(read.csv('../scRNA-seq analysis/Highlighted_gene_selected.csv')$Gen[4:31],
-                       'MALAT1','MED13L',"ZFAND3",'MT-CO1',"MT-CO2","MT-ATP6",
-                       "NEAT1","MIR155HG","LINC01619",'RPL10',"RPL13" ,"RPS18",
-                       "ACTB","GAPDH","VIM",
-                       "HLA-DRA","HLA-DRB1",'B2M'),raster = F)+
-  scale_fill_viridis_c()
-ggsave('Outputs/figures/Heatmap_markers_integrated_cDC2.pdf',
-       width = 12, height = 10)
-
-DoHeatmap(integrated_object[,integrated_object$celltype_int=='DC2pre-hm'],
-          features = c(read.csv('../scRNA-seq analysis/Highlighted_gene_selected.csv')$Gen[4:31],
-                       'MALAT1','MED13L',"ZFAND3",'MT-CO1',"MT-CO2","MT-ATP6",
-                       "NEAT1","MIR155HG","LINC01619",'RPL10',"RPL13" ,"RPS18",
-                       "ACTB","GAPDH","VIM",
-                       "HLA-DRA","HLA-DRB1",'B2M'),raster = F)+
-  scale_fill_viridis_c()
-ggsave('Outputs/figures/Heatmap_markers_integrated_DC2pre-hm.pdf',
-       width = 12, height = 10)
-
-DoHeatmap(integrated_object[,integrated_object$celltype_int=='DC2hm'],
-          features = c(read.csv('../scRNA-seq analysis/Highlighted_gene_selected.csv')$Gen[4:31],
-                       'MALAT1','MED13L',"ZFAND3",'MT-CO1',"MT-CO2","MT-ATP6",
-                       "NEAT1","MIR155HG","LINC01619",'RPL10',"RPL13" ,"RPS18",
-                       "ACTB","GAPDH","VIM",
-                       "HLA-DRA","HLA-DRB1",'B2M'),raster = F)+
-  scale_fill_viridis_c()
-ggsave('Outputs/figures/Heatmap_markers_integrated_DC2hm.pdf',
-       width = 12, height = 10)
-
 integrated_object$celltype_int <- Idents(integrated_object)
 pseudobulk_expr <- AverageExpression(
   integrated_object,
@@ -306,10 +242,7 @@ pseudobulk_expr <- AverageExpression(
   group.by = c("technique", "celltype_int")
 )
 
-# Convert the list output to a data frame for easier handling
 pseudobulk_df <- as.data.frame(pseudobulk_expr$RNA)
-# Choose a cluster to compare, for example, cluster "0"
-
   #DC2hm comparison
 cluster_to_compare <- "DC2hm"
 
@@ -327,36 +260,24 @@ comparison_df$scRNA_log <- log1p(comparison_df$scRNA)
 comparison_df$snRNA_log <- log1p(comparison_df$snRNA)
 
 
-genes.to.annotated <- c(read.csv('../scRNA-seq analysis/Highlighted_gene_selected.csv')$Gene[7:31],
+genes.to.annotated <- c(read.csv('Highlighted_gene_selected.csv')$Gene[7:31],
                         'MALAT1','MED13L','MT-CO1','RPL10',"RPL13" ,"RPS18")
-# Filter the main dataframe to get the coordinates for your genes
+# Filter the main dataframe to get the coordinates for  genes
 annotation_df <- subset(comparison_df, gene %in% genes.to.annotated)
-
-# --- Step 3: Create the plot with annotations ---
-# Recalculate correlation on the log-transformed data for the subtitle
 correlation_log <- cor(comparison_df$scRNA_log, comparison_df$snRNA_log, method = "pearson")
 correlation_text_log <- paste0("Pearson's R = ", round(correlation_log, 3))
-# --- Step 1: Define an expression threshold ---
-# A value of 0.1 is a good starting point to remove genes with virtually no expression.
+# Define an expression threshold to remove noisy and lowly expressed genes.
 expression_threshold <- 0.2
 
-# --- Step 2: Filter the main data frame ---
-# Keep genes where the expression is above the threshold in EITHER scRNA or snRNA data.
 comparison_df_filtered <- subset(comparison_df,
                                  scRNA_log > expression_threshold | snRNA_log > expression_threshold)
 
-# --- Step 3: Filter the annotation data frame to match ---
-# Ensure you only try to annotate genes that are still present after filtering.
 annotation_df_filtered <- subset(comparison_df_filtered, gene %in% genes.to.annotated)
 
-# --- Step 4: Recalculate correlation on the FILTERED data ---
-# This correlation value is more representative of the expressed genes.
 correlation_filtered <- cor(comparison_df_filtered$scRNA_log,
                             comparison_df_filtered$snRNA_log,
                             method = "pearson")
 correlation_text_filtered <- paste0("Pearson's R = ", round(correlation_filtered, 3))
-
-# --- Step 5: Generate the final, cleaner plot ---
 rasterize(ggplot(comparison_df_filtered, aes(x = scRNA_log, y = snRNA_log)) +
   geom_point(alpha = 0.5, color = "#E679C5") +
   geom_smooth(method = "lm", se = FALSE, color = "firebrick") +
@@ -371,7 +292,6 @@ rasterize(ggplot(comparison_df_filtered, aes(x = scRNA_log, y = snRNA_log)) +
     y = "Log(Average Expression + 1) (snRNA-seq)"
   ) +
   theme_bw(),dpi = 300)
-# End of the line
 ggsave('Outputs/figures/Correlation_analysis_scatter_DC2hm.pdf',
        width = 8, height = 8)
 
@@ -379,50 +299,37 @@ ggsave('Outputs/figures/Correlation_analysis_scatter_DC2hm.pdf',
 #cDC1 comparison
 cluster_to_compare <- "cDC1"
 
-# Create a data frame for plotting by pulling the relevant columns
 comparison_df <- data.frame(
   scRNA = pseudobulk_df[['Donor 6 scRNA-seq_cDC1']],
   snRNA = pseudobulk_df[['Donor 6 snRNA-seq_cDC1']],
   gene = rownames(pseudobulk_df)
 )
 
-# Calculate the Pearson correlation coefficient
 correlation <- cor(comparison_df$scRNA, comparison_df$snRNA, method = "pearson")
 correlation_text <- paste0("Pearson's R = ", round(correlation, 3))
 comparison_df$scRNA_log <- log1p(comparison_df$scRNA)
 comparison_df$snRNA_log <- log1p(comparison_df$snRNA)
 
 
-genes.to.annotated <- c(read.csv('../scRNA-seq analysis/Highlighted_gene_selected.csv')$Gene[1:3],
+genes.to.annotated <- c(read.csv('Highlighted_gene_selected.csv')$Gene[1:3],
                         'MALAT1','MED13L','MT-CO1','RPL10',"RPL13" ,"RPS18")
-# Filter the main dataframe to get the coordinates for your genes
 annotation_df <- subset(comparison_df, gene %in% genes.to.annotated)
 
-# --- Step 3: Create the plot with annotations ---
-# Recalculate correlation on the log-transformed data for the subtitle
 correlation_log <- cor(comparison_df$scRNA_log, comparison_df$snRNA_log, method = "pearson")
 correlation_text_log <- paste0("Pearson's R = ", round(correlation_log, 3))
-# --- Step 1: Define an expression threshold ---
-# A value of 0.1 is a good starting point to remove genes with virtually no expression.
+
 expression_threshold <- 0.2
 
-# --- Step 2: Filter the main data frame ---
-# Keep genes where the expression is above the threshold in EITHER scRNA or snRNA data.
 comparison_df_filtered <- subset(comparison_df,
                                  scRNA_log > expression_threshold | snRNA_log > expression_threshold)
 
-# --- Step 3: Filter the annotation data frame to match ---
-# Ensure you only try to annotate genes that are still present after filtering.
 annotation_df_filtered <- subset(comparison_df_filtered, gene %in% genes.to.annotated)
 
-# --- Step 4: Recalculate correlation on the FILTERED data ---
-# This correlation value is more representative of the expressed genes.
 correlation_filtered <- cor(comparison_df_filtered$scRNA_log,
                             comparison_df_filtered$snRNA_log,
                             method = "pearson")
 correlation_text_filtered <- paste0("Pearson's R = ", round(correlation_filtered, 3))
 
-# --- Step 5: Generate the final, cleaner plot ---
 rasterize(ggplot(comparison_df_filtered, aes(x = scRNA_log, y = snRNA_log)) +
   geom_point(alpha = 0.5, color = "#C5E524") +
   geom_smooth(method = "lm", se = FALSE, color = "firebrick") +
@@ -437,57 +344,45 @@ rasterize(ggplot(comparison_df_filtered, aes(x = scRNA_log, y = snRNA_log)) +
     y = "Log(Average Expression + 1) (snRNA-seq)"
   ) +
   theme_bw(),dpi = 300)
-# End of the line
 ggsave('Outputs/figures/Correlation_analysis_scatter_cDC1.pdf',
        width = 8, height = 8)
 
 #cDC2 comparison
 cluster_to_compare <- "cDC2"
 
-# Create a data frame for plotting by pulling the relevant columns
 comparison_df <- data.frame(
   scRNA = pseudobulk_df[['Donor 6 scRNA-seq_cDC2']],
   snRNA = pseudobulk_df[['Donor 6 snRNA-seq_cDC2']],
   gene = rownames(pseudobulk_df)
 )
 
-# Calculate the Pearson correlation coefficient
 correlation <- cor(comparison_df$scRNA, comparison_df$snRNA, method = "pearson")
 correlation_text <- paste0("Pearson's R = ", round(correlation, 3))
 comparison_df$scRNA_log <- log1p(comparison_df$scRNA)
 comparison_df$snRNA_log <- log1p(comparison_df$snRNA)
 
 
-genes.to.annotated <- c(read.csv('../scRNA-seq analysis/Highlighted_gene_selected.csv')$Gene[4:31],
+genes.to.annotated <- c(read.csv('Highlighted_gene_selected.csv')$Gene[4:31],
                         'MALAT1','MED13L','MT-CO1','RPL10',"RPL13" ,"RPS18")
-# Filter the main dataframe to get the coordinates for your genes
 annotation_df <- subset(comparison_df, gene %in% genes.to.annotated)
 
-# --- Step 3: Create the plot with annotations ---
-# Recalculate correlation on the log-transformed data for the subtitle
 correlation_log <- cor(comparison_df$scRNA_log, comparison_df$snRNA_log, method = "pearson")
 correlation_text_log <- paste0("Pearson's R = ", round(correlation_log, 3))
-# --- Step 1: Define an expression threshold ---
-# A value of 0.1 is a good starting point to remove genes with virtually no expression.
+
 expression_threshold <- 0.2
 
-# --- Step 2: Filter the main data frame ---
-# Keep genes where the expression is above the threshold in EITHER scRNA or snRNA data.
+
 comparison_df_filtered <- subset(comparison_df,
                                  scRNA_log > expression_threshold | snRNA_log > expression_threshold)
 
-# --- Step 3: Filter the annotation data frame to match ---
-# Ensure you only try to annotate genes that are still present after filtering.
+
 annotation_df_filtered <- subset(comparison_df_filtered, gene %in% genes.to.annotated)
 
-# --- Step 4: Recalculate correlation on the FILTERED data ---
-# This correlation value is more representative of the expressed genes.
 correlation_filtered <- cor(comparison_df_filtered$scRNA_log,
                             comparison_df_filtered$snRNA_log,
                             method = "pearson")
 correlation_text_filtered <- paste0("Pearson's R = ", round(correlation_filtered, 3))
 
-# --- Step 5: Generate the final, cleaner plot ---
 rasterize(ggplot(comparison_df_filtered, aes(x = scRNA_log, y = snRNA_log)) +
   geom_point(alpha = 0.5, color = "#38C2E5") +
   geom_smooth(method = "lm", se = FALSE, color = "firebrick") +
@@ -509,14 +404,12 @@ ggsave('Outputs/figures/Correlation_analysis_scatter_cDC2.pdf',
 #DC2pre-hm comparison
 cluster_to_compare <- "DC2pre-hm"
 
-# Create a data frame for plotting by pulling the relevant columns
 comparison_df <- data.frame(
   scRNA = pseudobulk_df[['Donor 6 scRNA-seq_DC2pre-hm']],
   snRNA = pseudobulk_df[['Donor 6 snRNA-seq_DC2pre-hm']],
   gene = rownames(pseudobulk_df)
 )
 
-# Calculate the Pearson correlation coefficient
 correlation <- cor(comparison_df$scRNA, comparison_df$snRNA, method = "pearson")
 correlation_text <- paste0("Pearson's R = ", round(correlation, 3))
 comparison_df$scRNA_log <- log1p(comparison_df$scRNA)
@@ -525,34 +418,19 @@ comparison_df$snRNA_log <- log1p(comparison_df$snRNA)
 
 genes.to.annotated <- c(read.csv('../scRNA-seq analysis/Highlighted_gene_selected.csv')$Gene[4:31],
                         'MALAT1','MED13L','MT-CO1','RPL10',"RPL13" ,"RPS18")
-# Filter the main dataframe to get the coordinates for your genes
 annotation_df <- subset(comparison_df, gene %in% genes.to.annotated)
 
-# --- Step 3: Create the plot with annotations ---
-# Recalculate correlation on the log-transformed data for the subtitle
 correlation_log <- cor(comparison_df$scRNA_log, comparison_df$snRNA_log, method = "pearson")
 correlation_text_log <- paste0("Pearson's R = ", round(correlation_log, 3))
-# --- Step 1: Define an expression threshold ---
-# A value of 0.1 is a good starting point to remove genes with virtually no expression.
 expression_threshold <- 0.2
-
-# --- Step 2: Filter the main data frame ---
-# Keep genes where the expression is above the threshold in EITHER scRNA or snRNA data.
 comparison_df_filtered <- subset(comparison_df,
                                  scRNA_log > expression_threshold | snRNA_log > expression_threshold)
-
-# --- Step 3: Filter the annotation data frame to match ---
-# Ensure you only try to annotate genes that are still present after filtering.
 annotation_df_filtered <- subset(comparison_df_filtered, gene %in% genes.to.annotated)
-
-# --- Step 4: Recalculate correlation on the FILTERED data ---
-# This correlation value is more representative of the expressed genes.
 correlation_filtered <- cor(comparison_df_filtered$scRNA_log,
                             comparison_df_filtered$snRNA_log,
                             method = "pearson")
 correlation_text_filtered <- paste0("Pearson's R = ", round(correlation_filtered, 3))
 
-# --- Step 5: Generate the final, cleaner plot ---
 rasterize(ggplot(comparison_df_filtered, aes(x = scRNA_log, y = snRNA_log)) +
   geom_point(alpha = 0.5, color = "#384C94") +
   geom_smooth(method = "lm", se = FALSE, color = "firebrick") +
@@ -572,7 +450,7 @@ ggsave('Outputs/figures/Correlation_analysis_scatter_DC2pre-hm.pdf',
        width = 8, height = 8)
 
 
-# FYFN
+# Direct comparison for platform-sked getting platform-sked cell type markers
 DimPlot(d6.scrna)
 dc2hm.program.scrna <- FindAllMarkers(d6.scrna,only.pos = T)
 DimPlot(multiomic.object.cdcs)
@@ -597,14 +475,13 @@ marker.list.multi <- significant.markers.multi %>%
   summarise(genes = list(gene), .groups = 'drop') %>%
   tibble::deframe()
 
-# Identify the common cell types (clusters) between both datasets
+# Identify the common cell types (clusters) beten both datasets
 common_clusters <- intersect(names(marker.list.scrna), names(marker.list.multi))
 # Initialize an empty list to store the data frames for Excel
 excel_output_list <- list()
 
 for (cell_type in common_clusters) {
   
-  # 1. Get gene lists for the current cell type
   genes_scrna <- marker.list.scrna[[cell_type]]
   genes_multi <- marker.list.multi[[cell_type]]
   
@@ -613,7 +490,6 @@ for (cell_type in common_clusters) {
     snRNA = genes_multi
   )
   
-  # 2. Generate and save the Venn diagram as a PDF
   venn_plot <- ggvenn(
     comparison_list_venn, 
     fill_color = c("#0073C2FF", "#EFC000FF"),
@@ -623,8 +499,6 @@ for (cell_type in common_clusters) {
   ) +
     ggtitle(paste("Marker Gene Comparison for", cell_type)) +
     theme(plot.title = element_text(size = 16, face = "bold"))
-  
-  # Sanitize filename (replaces spaces, slashes, etc. with underscores)
   safe_filename <- gsub("[^A-Za-z0-9_.-]", "_", cell_type)
   
   ggsave(
@@ -633,14 +507,10 @@ for (cell_type in common_clusters) {
     width = 7, height = 6, # Standard PDF size in inches
     device = "pdf"
   )
-  
-  # 3. Calculate unique and overlapping gene sets
+
   scrna_only <- setdiff(genes_scrna, genes_multi)
   multi_only <- setdiff(genes_multi, genes_scrna)
   overlap_genes <- intersect(genes_scrna, genes_multi)
-  
-  # 4. Create a data frame for Excel
-  # We pad with NA so all vectors are the same length, forming clean columns
   max_length <- max(length(scrna_only), length(multi_only), length(overlap_genes))
   
   comparison_df <- data.frame(
@@ -649,17 +519,14 @@ for (cell_type in common_clusters) {
     Shared_Markers = c(overlap_genes, rep(NA, max_length - length(overlap_genes)))
   )
   
-  # 5. Add the data frame to our list for Excel
-  # Sanitize sheet name (Excel sheets have a 31-char limit and no special chars)
   safe_sheet_name <- substr(safe_filename, 1, 31)
   excel_output_list[[safe_sheet_name]] <- comparison_df
 }
 
-# --- Save the final Excel file ---
-# write.xlsx automatically creates a new sheet for each element in the list
 write.xlsx(excel_output_list,
            file = "Outputs/tables/cell_type_marker_comparison.xlsx")
-#####
+
+# More focused DC2hm-related genes
 dc2hm.program.scrna <- FindMarkers(d6.scrna, ident.1 = 'DC2hm', 'cDC2')
 dc2hm.program.snrna <- FindMarkers(multiomic.object.cdcs,
                                    ident.1 = 'DC2hm', 'cDC2')
@@ -725,7 +592,6 @@ combined_output <- list(
   "snRNA_Only_DOWN" = snrna_only_down_df
 )
 
-# --- Write the combined list to one Excel file ---
 write.xlsx(combined_output, 
            file = "Outputs/tables/DC2hm_vs_cDC2_Combined_Stats.xlsx")
 
@@ -735,7 +601,7 @@ comparison_list_up <- list(
   snRNA = deg_snrna_up$gene
 )
 
-# 2. Extract your gene sets
+# 2. Extract gene sets
 set1 <- comparison_list_up[[1]]
 set2 <- comparison_list_up[[2]]
 set_names <- names(comparison_list_up)
@@ -749,7 +615,7 @@ cross_area_val <- length(intersect(set1, set2))
 
 # 4. Draw the Venn diagram
 # This function creates and saves the plot directly to a file (e.g., PNG)
-# To prevent the function from creating a log file, we add this line:
+# To prevent the function from creating a log file,  add this line:
 futile.logger::flog.threshold(futile.logger::ERROR, name = "VennDiagramLogger")
 
 venn.plot <- draw.pairwise.venn(
@@ -782,8 +648,8 @@ venn.plot <- draw.pairwise.venn(
 grid.draw(venn.plot)
 
 
-# 2. Extract your DOWNREGULATED gene sets
-#    Make sure to replace 'comparison_list_down' with your actual variable name
+# 2. Extract DOWNREGULATED gene sets
+#    Make sure to replace 'comparison_list_down' with  actual variable name
 set1_down <- comparison_list_down[[1]]
 set2_down <- comparison_list_down[[2]]
 set_names_down <- names(comparison_list_down)
@@ -844,7 +710,7 @@ ggsave(
 # Initialize an empty list to store the GO analysis results
 go_results_list <- list()
 
-# Loop through each data frame in your combined_output list
+# Loop through each data frame in  combined_output list
 for (sheet_name in names(combined_output)) {
   
   # Get the current data frame
@@ -867,7 +733,7 @@ for (sheet_name in names(combined_output)) {
                     pvalueCutoff  = 0.05,
                     qvalueCutoff  = 0.2)
     
-    # Check if any significant results were returned
+    # Check if any significant results re returned
     if (!is.null(ego) && nrow(ego) > 0) {
       # Add the simplified results to our list
       go_results_list[[sheet_name]] <- as.data.frame(ego) %>%
@@ -883,7 +749,7 @@ if (length(go_results_list) > 0) {
   write.xlsx(go_results_list, file = "Outputs/tables/GO_Enrichment_Results.xlsx")
   print("Analysis complete! Results saved to 'GO_Enrichment_Results.xlsx'")
 } else {
-  print("Analysis complete, but no significant enrichment results were found.")
+  print("Analysis complete, but no significant enrichment results re found.")
 }
 
 # 3. Define the list of specific GO IDs for each category
@@ -906,7 +772,7 @@ for (result_name in names(designated_go_ids)) {
     filter(ID %in% target_ids)
   
   if (nrow(terms_to_plot) == 0) {
-    warning(paste("For category '", result_name, "', none of the specified GO IDs were found. Skipping plot."))
+    warning(paste("For category '", result_name, "', none of the specified GO IDs re found. Skipping plot."))
     next
   }
   
@@ -978,8 +844,9 @@ VlnPlot(multiomic.object.cdcs, features = c('CCL17','CXCL9','IL32'),
         pt.size = 0, cols =  c('#C5E524', '#38C2E5','#384C94','#E679C5'))
 ggsave('Outputs/figures/platform_scrna_up_snrna.pdf',
        width = 8, height = 3)
-# Platform gene calling ---------------------------------------------------
-# Get a list of all your cell type identities
+
+                     
+# Platform gene calling by direct comparison ---------------------------------------------------
 Idents(integrated_object) <- 'celltype_int'
 all_cell_types <- levels(Idents(integrated_object))
 
@@ -996,8 +863,8 @@ for (cell_type in all_cell_types) {
   subset_object <- subset(integrated_object, idents = cell_type)
   
   # Run FindMarkers to compare the two technologies within this cell type
-  # We use the 'RNA' assay for the original, non-integrated counts
-  # We group by the 'tech' metadata column
+  #  use the 'RNA' assay for the original, non-integrated counts
+  #  group by the 'tech' metadata column
   de_genes <- FindMarkers(
     subset_object,
     ident.1 = "Donor 6 scRNA-seq",
@@ -1098,7 +965,7 @@ go_plots <- list()
 log2fc_threshold <- 1
 padj_threshold <- 0.05
 
-# Get the list of all cell types from your previous DE analysis
+# Get the list of all cell types from  previous DE analysis
 all_cell_types <- names(de_results_list)
 
 # --- Step 2: Loop Through Each Cell Type ---
@@ -1120,11 +987,11 @@ for (cell_type in all_cell_types) {
     filter(avg_log2FC < -log2fc_threshold & p_val_adj < padj_threshold) %>%
     rownames()
   
-  # Define the "universe" of all genes that were tested
+  # Define the "universe" of all genes that re tested
   universe_genes <- rownames(results_df)
   
   # --- Run GO Enrichment for Up-regulated Genes ---
-  # We check if there are enough genes to run the analysis
+  #  check if there are enough genes to run the analysis
   if (length(up_genes) > 10) {
     go_up <- enrichGO(
       gene          = up_genes,
@@ -1175,7 +1042,7 @@ for (cell_type in all_cell_types) {
 message("--- GO Enrichment Analysis Complete ---")
 
 # --- Step 1: Create a Directory to Store the PDFs ---
-# This keeps your main folder clean.
+# This keeps  main folder clean.
 output_dir <- "Outputs/figures/"
 if (!dir.exists(output_dir)) {
   dir.create(output_dir)
@@ -1222,7 +1089,7 @@ for (cell_type in all_cell_types) {
     arrange(desc(avg_log2FC)) %>% 
     head(num_genes_to_annotate) %>% pull(gene)
   
-  # Identify the top N down-regulated (lowest log2FC)
+  # Identify the top N down-regulated (lost log2FC)
   top_down_genes_to_label <- plot_data %>%
     filter(significance == "Down-regulated") %>%
     arrange(avg_log2FC) %>%
@@ -1378,8 +1245,10 @@ for (cell_type in all_cell_types) {
 
 message(paste("--- All plots have been saved to the '", output_dir_up_go, "' folder. ---"))
 write.xlsx(go_down_results,'Outputs/figures/GO_down.xlsx')
-# ATAC markers ------------------------------------------------------------
 
+# Thank god the tedious part is over.
+                     
+# ATAC markers ------------------------------------------------------------
 marker.cluster.list <- list()
 # add gene annotation to region
 for (i in names(table(markers$cluster))) {
@@ -1448,22 +1317,18 @@ anno.markers <- rowAnnotation(ano = anno_mark(at = index, side = 'left',
                                               labels_gp = gpar(fontsize = 5),
                                               lines_gp = gpar(),
                                               extend = unit(1, 'npc')))
-# 1. Determine the maximum absolute value for symmetric scaling
+# Let's create a nice palette                                
+# Determine the maximum absolute value for symmetric scaling
 max_abs_val <- max(abs(de.peaks.mat.scaled))
 
-# 2. Define the color scale breaks and corresponding viridis colors
+# Define the color scale breaks and corresponding viridis colors
 color_breaks <- c(-max_abs_val, 0, max_abs_val)
 
-# 3. Create a color function using the Magma viridis option, spanning the breaks
-# The 'magma' option provides a vibrant, high-contrast spectrum.
+# Create a color function using the Magma viridis option, spanning the breaks
 viridis_color_fn <- colorRamp2(
   breaks = color_breaks,
   colors = viridis(3) # Creates three colors from the magma scale: low, middle (white/neutral), high
 )
-
-# --- Revised Heatmap Visualization ---
-# Note: I am assuming 'de.peaks.mat.scaled' and 'anno.markers' are already defined 
-# and accessible in your environment.
 
 rasterize(as.ggplot(Heatmap(de.peaks.mat.scaled,
                             cluster_columns = FALSE, 
@@ -1506,9 +1371,9 @@ ggplot(dc2hm.peaks.enrichwp.show, aes(x=Description,y=Count,fill=p.adjust))+
 ggsave('Outputs/figures/DE_peaks_dc2hm_enrichment.pdf',
        width = 6, height = 1.5)
 
-# Coverage plots for Figure 1M----------------------------------------------------------
   # The fragments file is available @ GEO: GSE267255
-UpdatePath(multiomic.object.cdcs@assays$ATAC@fragments[[1]], '../../Donor_6_ATAC-seq/cellranger_arc/D6_ATAC/atac_fragments.tsv.gz')
+UpdatePath(multiomic.object.cdcs@assays$ATAC@fragments[[1]],
+           'atac_fragments.tsv.gz')
 for (i in c('CLEC9A','CD1C','FSCN1', 'PVR', 'CRLF2','STAT5A','CD200')) {
   pdf(paste0('Outputs/figures/', i, '_coverage_plot.pdf'),
       width=3.5, height=3)
