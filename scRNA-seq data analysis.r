@@ -4,7 +4,7 @@ p_load(Seurat, ggplot2, ggplotify, ggpubr, harmony,
        RColorBrewer, ggrastr,CytoTRACE, monocle3,ClusterGVis,
        clusterProfiler, ggsci, ComplexHeatmap, circlize)
 set.seed(0822)
-setwd("/media/dell/0E54E2B554E29EA9/HanRunpeng/mregDC_project/Lab_Sequencing_Data/Code deposit/scRNA-seq analysis")
+setwd("scRNA-seq analysis")
 # QC for Cellranger Outputs and create filtered RDS files -----------------------------------------------
 work.list <- c("Dnr6","Dnr10","Dnr12")
 
@@ -128,7 +128,6 @@ saveRDS(d6.object, 'Outputs/rds/Dnr6_all_cells.rds')
 d6.object$celltype_hh_1 <- Idents(d6.object)
 d6.object.filtered <- d6.object [,!d6.object $celltype_hh_1 %in% c('Low reads',
                                                         'Doublets')]
-  # Figure S2B, Donor 6 UMAP of all cells
 rasterize(DimPlot(d6.object.filtered, label = T)+NoLegend()+
             ggtitle('Donor 6'),dpi = 300)
 ggsave('Outputs/figures/UMAP_dnr6_annotated.filtered.pdf',
@@ -177,12 +176,10 @@ d6.object.cdcs <- RenameIdents(d6.object.cdcs, c('0'='DC2hm','1'='cDC2','2'='cDC
 levels(d6.object.cdcs) <- c('cDC1','cDC2','DC2pre-hm','DC2hm')
 d6.object.cdcs$celltype_hh_1 <- Idents(d6.object.cdcs)
 
-  # Figure 1D UMAP of Donor 6 cDCs
 rasterize(DimPlot(d6.object.cdcs, pt.size = .1,
                   cols = c('#C5E524', '#38C2E5','#384C94','#E679C5')),
           dpi = 300)
 ggsave('Outputs/figures/Donor_6_UMAP_cDCs.pdf', width = 4.5, height = 3)
-  # Figure 1F Dot plot showing marker expression in Donor 6 cDC subpopulations
 DotPlot(d6.object.cdcs, 
         features = read.csv('Highlighted_gene_selected.csv')$Gene)+
   scale_color_viridis_c()+
@@ -195,7 +192,6 @@ VlnPlot(d6.object.cdcs, features = 'CCR7',
         pt.size = 0, cols = c('#C5E524', '#38C2E5','#384C94','#E679C5'))
 ggsave('Outputs/figures/CCR7_Vlnplot.pdf',
        width = 4, height = 3)
-  # Figure 5A, CRLF2 feature plot
 rasterize(FeaturePlot(d6.object.cdcs, features = 'CRLF2', pt.size = .1)+
             scale_color_gradient(low = 'lightgrey', high='#FF2B72'),
           dpi = 300)
@@ -247,7 +243,6 @@ saveRDS(d10.object, 'Outputs/rds/Dnr10_all_cells.rds')
 d10.object$celltype_hh_1 <- Idents(d10.object )
 d10.object.filtered <- d10.object [,!d10.object $celltype_hh_1 %in% c('Low reads',
                                                                    'Doublets')]
-# Figure S2B, Donor 10 UMAP of all cells
 rasterize(DimPlot(d10.object.filtered, label = T)+NoLegend()+
             ggtitle('Donor 10'),dpi = 300)
 ggsave('Outputs/figures/UMAP_dnr10_annotated.filtered.pdf',
@@ -291,7 +286,6 @@ rasterize(DimPlot(d10.object.cdcs, pt.size = .1,
                   cols = c('#C5E524', '#38C2E5','#384C94','#E679C5')),
           dpi = 300)
 ggsave('Outputs/figures/Donor_10_UMAP_cDCs.pdf', width = 4.5, height = 3)
-# Figure 1F Dot plot showing marker expression in Donor 6 cDC subpopulations
 DotPlot(d10.object.cdcs, 
         features = read.csv('Highlighted_gene_selected.csv')$Gene)+
   scale_color_viridis_c()+
@@ -347,12 +341,10 @@ saveRDS(d12.object, 'Outputs/rds/Dnr12_all_cells.rds')
 d12.object$celltype_hh_1 <- Idents(d12.object )
 d12.object.filtered <- d12.object [,!d12.object $celltype_hh_1 %in% c('Low quality',
                                                                       'ILC')]
-# Figure S2B, Donor 12 UMAP of filtered cells
 rasterize(DimPlot(d12.object.filtered, label = T)+NoLegend()+
             ggtitle('Donor 12'),dpi = 300)
 ggsave('Outputs/figures/UMAP_dnr12_annotated.filtered.pdf',
        width = 4,height = 3.5)
-# Figure S2B, Donor 12 UMAP of all cells
 rasterize(DimPlot(d12.object, label = T,
                   cols = c('cDC1'='#C5E524',
                            'pDC'='#8965A9',
@@ -388,7 +380,6 @@ rasterize(DimPlot(d12.object.cdcs, pt.size = .1,
                   cols = c('#C5E524', '#38C2E5','#384C94','#E679C5')),
           dpi = 300)
 ggsave('Outputs/figures/Donor_12_UMAP_cDCs.pdf', width = 4.5, height = 3)
-# Figure 1F Dot plot showing marker expression in Donor 6 cDC subpopulations
 DotPlot(d12.object.cdcs, 
         features = read.csv('Highlighted_gene_selected.csv')$Gene)+
   scale_color_viridis_c()+
@@ -397,7 +388,6 @@ ggsave('Outputs/figures/Dotplot_of_cDC_markers_Donor12.pdf',
        width = 10, height = 2.7)
 saveRDS(d12.object.cdcs,
         'Outputs/rds/Dnr12_cDCs.rds')
-
 
 # CytoTRACE analysis of Dnr6 cDCs -----------------------------------------
   # Subset Donor 6 cDC2s
@@ -416,7 +406,6 @@ d6.object.cdc2s <- RenameIdents(d6.object.cdc2s,c('0'='cDC2','1'='DC2hm',
                                                 '4'='DC2pre-hm'))
 d6.object.cdc2s$celltype_hh_1 <- Idents(d6.object.cdc2s)
 levels(d6.object.cdc2s) <- c('cDC2', 'DC2pre-hm','DC2hm')
-# This cDC2-to-DC2hm UMAP is used for Figure 1H-1K
 rasterize(DimPlot(d6.object.cdc2s, pt.size = .1,
                   cols = c('#38C2E5','#384C94','#E679C5')),
           dpi = 300)
@@ -428,10 +417,8 @@ exp.mat <- as.matrix(d6.object.cdc2s@assays$RNA@counts)
 phe <- as.character(d6.object.cdc2s$celltype_hh_1)
 names(phe) <- rownames(d6.object.cdc2s@meta.data)
 cytotrace.result <- CytoTRACE(exp.mat,ncores = 5)
-# Figure 1I and 1J
 plotCytoTRACE(cytotrace.result,phenotype = phe,
               emb = d6.object.cdc2s@reductions$umap@cell.embeddings,outputDir = 'Outputs/figures/')
-
 
 # Monocle3 analysis -------------------------------------------------------
 count.matrix <- GetAssayData(d6.object.cdc2s, assay = 'RNA',
@@ -456,7 +443,6 @@ cds <- learn_graph(cds,use_partition = F,
                                             'orthogonal_proj_tip'=F))
 plot_cells(cds)
 cds <- order_cells(cds)
-# Plot pseudotime in UMAP space, Figure 1K
 rasterize(plot_cells(cds, color_cells_by = 'pseudotime',label_cell_groups = F,
                      label_roots = F,label_branch_points = F,label_leaves = F,
                      alpha = 1,cell_stroke = 1,cell_size = 0.1),
@@ -525,8 +511,7 @@ write.xlsx(list('C1'=unique(ck$wide.res[ck$wide.res$cluster==1,
                 'C3'=unique(ck$wide.res[ck$wide.res$cluster==3,
                                         'gene'])),
            'Outputs/tables/Gene_clusters.xlsx')
-dc3.markers <- read.csv('Highlighted_gene_selected_with_isgs.csv')
-# Figure 1L pseudotime heatmap, note that final version abbreviate some pathways for layout's sake
+dc2hm.markers <- read.csv('Highlighted_gene_selected_with_isgs.csv')
 pdf('Outputs/figures/monocle3_pseudotime_heatmap.pdf',height = 10,width = 9,
     onefile = F)
 visCluster(object = ck,
@@ -536,7 +521,7 @@ visCluster(object = ck,
                          'IL18','IFI6','IFITM2','IFITM1','PYCARD','IFIT1',
                          'FCGR2A', 'FCGR2B', 'AXL', 'CD300A',
                          'MX1','MX2','ZEB2','IFI44','RPL26','RPL24','RPS3A',
-                         intersect(dc3.markers$Gene, 
+                         intersect(dc2hm.markers$Gene, 
                                    unique(ck$wide.res[ck$wide.res$cluster==2,'gene'])),
                          'HLA-DRA','HLA-DRB1','CD86','CXCL10','CTLA4',
                          'CD14','CD36'),
@@ -577,7 +562,6 @@ combined.object <- RenameIdents(combined.object,c('0'='cDC2','1'='cDC2',
 levels(combined.object) <- c('cDC1','cDC2','DC2pre-hm','DC2hm')
 combined.object$orig.ident <- factor(combined.object$orig.ident,
                                      levels =  c('Dnr6', 'Dnr10', 'Dnr12'))
-  # Figure S2C merged cDC UMAP
 rasterize(DimPlot(combined.object,
                   pt.size = .1,
                   cols = c('#C5E524', '#38C2E5','#384C94','#E679C5')),
@@ -593,10 +577,8 @@ DotPlot(combined.object,
         features = read.csv('Highlighted_gene_selected.csv')$Gene)+
   scale_color_viridis_c()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5))
-  # Figure S2D, Dot plot showing the expression of merged cDCs
 ggsave('Outputs/figures/Dotplot_of_cDC_markers_merged.pdf',
        width = 11, height = 2.7)
-  # Figure S2E, heatmap showing the expression of merfed cDCs
 marker.genes <- FindAllMarkers(combined.object,only.pos = T)
 marker.genes.ranked <- marker.genes[order(marker.genes$avg_log2FC, decreasing = T),]
 # Scale all the genes for illustration
@@ -636,7 +618,6 @@ dev.off()
 # Digital CCR7 sorting ----------------------------------------------------
 combined.object$ccr7_exp <- ifelse(combined.object@assays$RNA@counts['CCR7',]==0,
                                    'CCR7-', 'CCR7+')
-  # Figure S4A, UMAP colored by CCR7 RNA detection
 rasterize(DimPlot(combined.object,group.by = 'ccr7_exp',pt.size = 0.1,)+
             scale_color_aaas(),
           dpi = 300)
@@ -649,7 +630,6 @@ proportion.table <- as.data.frame(prop.table(table(combined.object$ccr7_exp,
 colnames(proportion.table) <- c('Sorted Cell Type',
                                 'Annotated Cell Type',
                                 'Proportion')
-  # Figure S4B, roportion bar plot
 ggplot(proportion.table, aes(x=`Annotated Cell Type`,
                              y=Proportion, fill=`Sorted Cell Type`))+
   geom_bar(stat = 'identity', position = 'fill')+
@@ -657,8 +637,7 @@ ggplot(proportion.table, aes(x=`Annotated Cell Type`,
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   scale_fill_aaas()
 ggsave('Outputs/figures/CCR7_sorting_sort_by_cluster.pdf', 
-       width = 4, height = 3)
-  # Figure S4C, DC2hm marker expression 
+       width = 4, height = 3) 
 VlnPlot(combined.object[, Idents(combined.object)=='cDC2'], 
         features = c('CCR7', 'CD83', 'CD274', 'FSCN1',
                      'FAS', 'ICOSLG', 'CCL22'), group.by = 'ccr7_exp',
@@ -671,8 +650,7 @@ fetal.spleen.1 <- readRDS('Prenatal_spleen_cDCs_1.rds') #cDCs from all fetal tis
 fetal.spleen.1 <- fetal.spleen.1[,fetal.spleen.1$tissue=='Spleen']
 fetal.spleen.1 <- RenameIdents(fetal.spleen.1,
                              c('cDC1'='cDC1', 'cDC2'='cDC2',
-                               'DC3'='DC2hm'))
-  # Figure S2H, UMAP of fetal spleens
+                               'DC3'='DC2hm')) # Note that here DC3 was used to be a in-house code for this novel DC subtype, not CD14+ DCs
 rasterize(DimPlot(fetal.spleen.1, pt.size = .1,
                   cols = c('#C5E524', '#38C2E5','#E679C5')),
           dpi = 300)
@@ -681,13 +659,11 @@ ggsave('Outputs/figures/Fetal_spleen_UMAP_cDCs_1.pdf', width = 4.5, height = 3)
 fetal.spleen.2 <- readRDS('Prenatal_spleen_cDCs_2.rds') #cDCs from all fetal tissues
 fetal.spleen.2 <- RenameIdents(fetal.spleen.2,
                              c('cDC1'='cDC1', 'cDC2'='cDC2',
-                               'DC3'='DC2hm'))
-# Figure S2H, UMAP of fetal spleens
+                               'DC3'='DC2hm')) # Note that here DC3 was used to be a in-house code for this novel DC subtype, not CD14+ DCs
 rasterize(DimPlot(fetal.spleen.2, pt.size = .1,
                   cols = c('#C5E524', '#38C2E5','#E679C5')),
           dpi = 300)
 ggsave('Outputs/figures/Fetal_spleen_UMAP_cDCs_2.pdf', width = 4.5, height = 3)
-# Figure 1I Dot plot showing marker expression in fetal spleen cDC subpopulations
   # Exclude CRLF2 and DLL4 as they are not sequenced in certain dataset due to V1 depth issue used in hu-mice dataset
 DotPlot(fetal.spleen.1, 
         features = read.csv('Highlighted_gene_selected.csv')$Gene[c(1:16,18:29,31)])+
@@ -705,19 +681,16 @@ fetal.spleen.merged <- merge(fetal.spleen.1, fetal.spleen.2)
 fetal.spleen.merged <- NormalizeData(fetal.spleen.merged) %>% FindVariableFeatures() %>% ScaleData()
 # Hu-mice spleen object were obtained from GSE148796
 humice.spleen <- readRDS('Mock_humice.rds') 
-# Figure S2F, UMAP of fetal spleens
 rasterize(DimPlot(humice.spleen, pt.size = .1,
                   cols = c('#C5E524', '#38C2E5','#E679C5')),
           dpi = 300)
 ggsave('Outputs/figures/Humice_spleen_UMAP_cDCs.pdf', width = 4.5, height = 3)
-# Figure S2G Dot plot showing marker expression in humice cDC subpopulations
 DotPlot(humice.spleen, 
         features = read.csv('Highlighted_gene_selected.csv')$Gene)+
   scale_color_viridis_c()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5))
 ggsave('Outputs/figures/Dotplot_of_cDC_markers_humice.pdf',
        width = 10, height = 2.7)
-  # TSLP-STAT5 signaling GSEA
 dc2hm.vs.cdc2.degs.humice <- FindMarkers(humice.spleen, ident.1 = 'DC2hm',
                                         ident.2 = 'cDC2',
                                         logfc.threshold = 0)
@@ -798,38 +771,3 @@ as.ggplot(pheatmap::pheatmap(scaled_df_manual, cluster_rows = F,cluster_cols = T
                              annotation_row = row.anno,scale = 'row',
                              clustering_distance_cols = "canberra"))
 ggsave('Outputs/figures/Hierarchical_clustering_heatmap.pdf')
-
-
-# Save the workspace
-save.image(file = 'scRNA-seq_analysis.RData')
-
-
-# DC1hm surrogation -------------------------------------------------------
-combined.object.cdc1 <- combined.object[,Idents(combined.object)=='cDC1']
-combined.object.cdc1 <- NormalizeData(combined.object.cdc1) %>% FindVariableFeatures() %>% ScaleData() %>% RunPCA(verbose=FALSE) %>% RunHarmony('orig.ident', 
-                                                                                                                                                plot_convergence = T,
-                                                                                                                                                max.iter.harmony = 50)
-combined.object.cdc1 <- RunUMAP(combined.object.cdc1, verbose = F, 
-                                reduction = 'harmony', dims = 1:5)
-combined.object.cdc1 <- FindNeighbors(combined.object.cdc1, reduction = 'harmony') %>% FindClusters(resolution = 5)
-combined.object.cdc1$celltype_hh_1 <- Idents(combined.object.cdc1)
-  # Figure S3A, DC1hm clustering UMAP
-palette_24 <- rep(brewer.pal(8, "Set3"), length.out = 24)
-palette_24 <- colorRampPalette(brewer.pal(8, "Set3"))(24)
-rasterize(DimPlot(combined.object.cdc1, cols = palette_24, label = T,
-                  pt.size = .1),
-          dpi = 300)
-ggsave('Outputs/figures/DC1_reclustering_UMAP.pdf', width = 4.7, height = 3)
-  # Figure S3B, DC1hm marker dot plot
-DotPlot(combined.object.cdc1, 
-        features = read.csv('Highlighted_gene_selected.csv')$Gene[c(1:3,7:30)])+
-  scale_color_viridis_c()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5))
-ggsave('Outputs/figures/Dotplot_of_cDC_markers_DC1hm.pdf',
-       width = 10, height = 7)
-
-write.xlsx(list('Fetal DC2hm vs cDC2'=dc2hm.vs.cdc2.degs.fetus.tslp.stat5.gsea@result,
-                'Hu-mice DC2hm vs cDC2'=dc2hm.vs.cdc2.degs.humice.tslp.stat5.gsea@result,
-                'Gene list'=rbind(read.gmt('WP_THYMIC_STROMAL_LYMPHOPOIETIN_TSLP_SIGNALING_PATHWAY.v2023.2.Hs.gmt'),
-                                  read.gmt('WIERENGA_STAT5A_TARGETS_UP.v2023.2.Hs.gmt'))),
-           'Fetus_Hu-mice_DC2hm_vs_cDC2_TSLP_STAT5_GSEA.xlsx', rowNames=T)
