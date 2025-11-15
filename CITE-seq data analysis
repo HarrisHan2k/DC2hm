@@ -6,7 +6,7 @@ p_load(Seurat, ggplot2, ggplotify, ggpubr, harmony,
        clusterProfiler, ggsci, ComplexHeatmap, circlize,scDblFinder, dsb,
        ggridges, monocle3, SeuratWrappers)
 set.seed(0822)
-output_dir <- '02_Clustering/'
+output_dir <- ''
 # QC for Cellranger Outputs and create filtered RDS files -----------------------------------------------
 work.list <- c("D6","D23")
 
@@ -125,6 +125,8 @@ markers.d23.rna <- FindAllMarkers(d23.object)
 write.xlsx(list('D6_RNA'=markers.d6.rna,
                 'D23_RNA'=markers.d23.rna),
            paste0(output_dir,'Clustering_markers_RNA.xlsx'))
+
+
 # D6 DC clustering --------------------------------------------------------
 d6.object.dc <- d6.object[,Idents(d6.object) %in% c(0,3,6,5,7,10,11,13)]
 d6.object.dc <- NormalizeData(d6.object.dc) %>% FindVariableFeatures() %>% ScaleData() %>% RunPCA(verbose=FALSE)
@@ -134,6 +136,7 @@ d6.object.dc <- FindClusters(d6.object.dc)
 rasterize(DimPlot(d6.object.dc, pt.size = .1, label = T), dpi = 300)
 ggsave(paste0(output_dir,'UMAP_D6_DC_RNA.pdf'), width = 6, height = 4)
 DefaultAssay(d6.object.dc) <- 'RNA'
+# Display markers for a general DC clustering
 DotPlot(d6.object.dc, features = c('ITGAX','CLEC9A','XCR1','CADM1',
                                   'CD1C','CLEC10A','CLEC4A',
                                   'AXL','SIGLEC6','CD5',
@@ -144,7 +147,7 @@ DotPlot(d6.object.dc, features = c('ITGAX','CLEC9A','XCR1','CADM1',
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5))
 ggsave(paste0(output_dir,'Dotplot_DC_D6_unannotated.pdf'),
        width = 10 ,height = 4)
-#markers.d6.dc.rna <- FindAllMarkers(d6.object.dc)
+markers.d6.dc.rna <- FindAllMarkers(d6.object.dc)
 Idents(d6.object.dc) <- 'seurat_clusters'
 d6.object.dc <- RenameIdents(d6.object.dc,
                              '0'='cDC2','1'='DC3','2'='pDC',
@@ -213,7 +216,8 @@ saveRDS(d23.object, paste0(output_dir,'d23.object.all.rds'))
 saveRDS(d6.object, paste0(output_dir,'d6.object.all.rds'))
 
 # Normalize ADT assays for Donor 6 ----------------------------------------------------
-  # Define drop outs
+# Standard dsb workgflow  
+# Define drop outs
 raw = Seurat::Read10X("01_CellRanger/D6_protein/raw_feature_bc_matrix/")
 cells = Seurat::Read10X("01_CellRanger/D6_protein/sample_filtered_feature_bc_matrix/")
 prot = raw$`Antibody Capture`
@@ -426,104 +430,14 @@ write.xlsx(list('Donor 23 RNA'=markers.d23.dc.rna.annotated,
            rowNames=T)
 
 
-
-# Ridges -------------------------------------------------
-  # Donor 6 immunoregulatory
-immuno.reg.adt <- c("Hu.CD155","Hu.CD274","Hu.CD273",
-                    "Hu.CD200","Hu.CD95", "Hu.CD197",
-                    "Hu.CD14-M5E2")
-DefaultAssay(d6.object.dc.adt.filtered) <- 'ADTNormalized'
-expression_data_compare <- as.data.frame(t(as.data.frame(GetAssayData(d6.object.dc.adt.filtered[immuno.reg.adt, ]))))
-# Add the cluster information
-expression_data_compare$Cluster <- Idents(d6.object.dc.adt.filtered)
-# Convert Cluster to a factor with desired order for plotting, if necessary
-expression_data_compare$Cluster <- factor(expression_data_compare$Cluster)
-
-# Reshape the data from wide to long format for ggplot2's facetting
-plot_data_compare <- expression_data_compare %>%
-  pivot_longer(
-    cols = -Cluster,
-    names_to = "Marker",
-    values_to = "Expression"
-  )
-
-ggplot(plot_data_compare, aes(x = Expression, y = Cluster, 
-                              fill = Cluster, color = Cluster)) +
-  geom_density_ridges2(alpha = 0.7) +
-  
-  # --- THIS IS THE MISSING LINE ---
-  # Add this to create a separate panel for each marker
-  facet_wrap(~ Marker, ncol = 3, scales = "free_x") +
-  
-  # Optional: Use a pseudo-log scale if your data has negative values
-  # scale_x_continuous(trans = scales::pseudo_log_trans(base = 10)) +
-  
-  labs(
-    title = "Marker Expression Across Clusters",
-    x = "Expression Level",
-    y = "Cluster"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    strip.text = element_text(face = "bold"),
-    legend.position = "none" # Hide legend as y-axis is labeled
-  ) 
-
-ggsave(paste0(output_dir,'Immunoregu_expression_ridges_D6.pdf'),
-       width = 8, height = 4)
-  # Donor 23 immunoregulatory
-DefaultAssay(d23.object.dc.adt.filtered) <- 'ADTNormalized'
-expression_data_compare <- as.data.frame(t(as.data.frame(GetAssayData(d23.object.dc.adt.filtered[immuno.reg.adt, ]))))
-# Add the cluster information
-expression_data_compare$Cluster <- Idents(d23.object.dc.adt.filtered)
-# Convert Cluster to a factor with desired order for plotting, if necessary
-expression_data_compare$Cluster <- factor(expression_data_compare$Cluster)
-
-# Reshape the data from wide to long format for ggplot2's facetting
-plot_data_compare <- expression_data_compare %>%
-  pivot_longer(
-    cols = -Cluster,
-    names_to = "Marker",
-    values_to = "Expression"
-  )
-
-ggplot(plot_data_compare, aes(x = Expression, y = Cluster, 
-                              fill = Cluster, color = Cluster)) +
-  geom_density_ridges2(alpha = 0.7) +
-  
-  # Add this to create a separate panel for each marker
-  facet_wrap(~ Marker, ncol = 3, scales = "free_x") +
-  
-  # Optional: Use a pseudo-log scale if your data has negative values
-  # scale_x_continuous(trans = scales::pseudo_log_trans(base = 10)) +
-  
-  labs(
-    title = "Marker Expression Across Clusters",
-    x = "Expression Level",
-    y = "Cluster"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    strip.text = element_text(face = "bold"),
-    legend.position = "none" # Hide legend as y-axis is labeled
-  ) 
-
-ggsave(paste0(output_dir,'Immunoregu_expression_ridges_D23.pdf'),
-       width = 8, height = 4)
-
-# All DC1/2 marker in all Donor 6 DCs
+# Display All DC1/2 marker in all Donor 6 DCs
 dc.marker <- c("FITC","Hu.CD370","Hu.CD141",
-                    "Hu.CD1c","Hu.CD172a", "Hu.CD301")
+               "Hu.CD1c","Hu.CD172a", "Hu.CD301")
 DefaultAssay(d6.object.dc.adt.filtered) <- 'ADTNormalized'
 expression_data_compare <- as.data.frame(t(as.data.frame(GetAssayData(d6.object.dc.adt.filtered[dc.marker, ]))))
 # Add the cluster information
 expression_data_compare$Cluster <- Idents(d6.object.dc.adt.filtered)
-# Convert Cluster to a factor with desired order for plotting, if necessary
 expression_data_compare$Cluster <- factor(expression_data_compare$Cluster)
-
-# Reshape the data from wide to long format for ggplot2's facetting
 plot_data_compare <- expression_data_compare %>%
   pivot_longer(
     cols = -Cluster,
@@ -536,12 +450,8 @@ plot_data_compare$Marker <- factor(plot_data_compare$Marker,
 ggplot(plot_data_compare, aes(x = Expression, y = Cluster, 
                               fill = Cluster, color = Cluster)) +
   geom_density_ridges2(alpha = 0.7) +
-  
-  # --- THIS IS THE MISSING LINE ---
-  # Add this to create a separate panel for each marker
   facet_wrap(~ Marker, ncol = 3, scales = "free_x") +
-  
-  # Optional: Use a pseudo-log scale if your data has negative values
+
   # scale_x_continuous(trans = scales::pseudo_log_trans(base = 10)) +
   
   labs(
@@ -565,11 +475,7 @@ ggplot(plot_data_compare, aes(x = Expression, y = Cluster,
                               fill = Cluster, color = Cluster)) +
   geom_density_ridges2(alpha = 0.7) +
   
-  # --- THIS IS THE MISSING LINE ---
-  # Add this to create a separate panel for each marker
   facet_wrap(~ Marker, ncol = 3, scales = "free_x") +
-  
-  # Optional: Use a pseudo-log scale if your data has negative values
   # scale_x_continuous(trans = scales::pseudo_log_trans(base = 10)) +
   
   labs(
@@ -596,7 +502,6 @@ expression_data_compare$Cluster <- Idents(d23.object.dc.adt.filtered)
 # Convert Cluster to a factor with desired order for plotting, if necessary
 expression_data_compare$Cluster <- factor(expression_data_compare$Cluster)
 
-# Reshape the data from wide to long format for ggplot2's facetting
 plot_data_compare <- expression_data_compare %>%
   pivot_longer(
     cols = -Cluster,
@@ -609,9 +514,7 @@ plot_data_compare$Marker <- factor(plot_data_compare$Marker,
 ggplot(plot_data_compare, aes(x = Expression, y = Cluster, 
                               fill = Cluster, color = Cluster)) +
   geom_density_ridges2(alpha = 0.7) +
-  
-  # --- THIS IS THE MISSING LINE ---
-  # Add this to create a separate panel for each marker
+
   facet_wrap(~ Marker, ncol = 3, scales = "free_x") +
   
   # Optional: Use a pseudo-log scale if your data has negative values
@@ -659,7 +562,7 @@ ggsave(paste0(output_dir,'DC1_2_marker_in_selected_DC_expression_ridges_D23.pdf'
        width = 8, height = 4)
 
 
-# Save cellt-ype markers --------------------------------------------------
+# Save cell-type markers --------------------------------------------------
 DefaultAssay(d6.object.dc.adt.filtered) <- 'ADTNormalized'
 d6.adt.markers <- FindAllMarkers(d6.object.dc.adt.filtered)
 DefaultAssay(d6.object.dc.adt.filtered) <- 'RNA'
@@ -688,39 +591,23 @@ counts_matrix <- GetAssayData(
   slot = "counts"
 )
 d23.object.dc.adt.filtered$celltype <- Idents(d23.object.dc.adt.filtered)
-# 2.2 --- Get the cell metadata ---
 cell_meta <- d23.object.dc.adt.filtered@meta.data
-
-# 2.3 --- Create the gene metadata ---
-# Monocle 3 requires a 'gene_short_name' column.
 gene_meta <- data.frame(
   gene_short_name = rownames(counts_matrix),
   row.names = rownames(counts_matrix)
 )
-# 3.1 --- Create the Monocle 3 object ---
 message("Creating new cell_data_set (CDS)...")
 cds <- new_cell_data_set(
   expression_data = counts_matrix,
   cell_metadata = cell_meta,
   gene_metadata = gene_meta
 )
-
-# 3.2 --- Run essential Monocle 3 processing ---
-# This step calculates size factors, normalizes, and runs PCA.
-# This is NOT optional, as clustering and graph learning depend on it.
-message("Running Monocle 3 preprocess_cds (norm, log, PCA)...")
-cds <- preprocess_cds(cds, num_dim = 100)
-
-# 3.3 --- Cluster cells using Monocle 3's PCA ---
-# This creates the cell partitions/clusters used to build the graph.
-message("Running Monocle 3 cluster_cells (using PCA)...")
+cds <- preprocess_cds(cds, 
+                      num_dim = 100)
 cds <- cluster_cells(cds, reduction_method = "PCA")
-# 4.1 --- Extract Seurat UMAP coordinates ---
+# Use Seurat UMAP coordinates
 seurat_umap_coords <- Embeddings(d23.object.dc.adt.filtered, reduction = "umap")
 
-# 4.2 --- Add Seurat UMAP to the CDS object ---
-# This overwrites any existing UMAP in the cds object.
-message("Injecting Seurat UMAP coordinates into CDS...")
 reducedDims(cds)[["UMAP"]] <- seurat_umap_coords
 
 cds <- cluster_cells(cds, 
@@ -779,18 +666,15 @@ d23.object.dc.adt.filtered.cdc2 <- NormalizeData(d23.object.dc.adt.filtered.cdc2
    RunPCA()
 d23.object.dc.adt.filtered.cdc2 <- RunUMAP(d23.object.dc.adt.filtered.cdc2, 
                                           dims = 1:10)
-# Donor 23 cDC2 monocle3 trajectory
+# Donor 23 cDC2 monocle3 trajectory, similar workflow
 
 counts_matrix <- GetAssayData(
   d23.object.dc.adt.filtered.cdc2,
   assay = "RNA",
   slot = "counts"
 )
-# 2.2 --- Get the cell metadata ---
 cell_meta <- d23.object.dc.adt.filtered.cdc2@meta.data
 
-# 2.3 --- Create the gene metadata ---
-# Monocle 3 requires a 'gene_short_name' column.
 gene_meta <- data.frame(
   gene_short_name = rownames(counts_matrix),
   row.names = rownames(counts_matrix)
@@ -803,13 +687,9 @@ cds <- new_cell_data_set(
   gene_metadata = gene_meta
 )
 cds <- preprocess_cds(cds, num_dim = 100)
-
-# 3.3 --- Cluster cells using Monocle 3's PCA ---
-# This creates the cell partitions/clusters used to build the graph.
 message("Running Monocle 3 cluster_cells (using PCA)...")
 cds <- cluster_cells(cds, 
                      reduction_method = "PCA")
-# 4.1 --- Extract Seurat UMAP coordinates ---
 seurat_umap_coords <- Embeddings(d23.object.dc.adt.filtered.cdc2,
                                  reduction = "umap")
 
@@ -857,12 +737,8 @@ rasterize(plot_cells(cds,
 ggsave('02_Clustering/Monocle3_inferred pseudotime_cDC2_D23.pdf',
        width = 4, height = 3)
 saveRDS(cds, paste0(output_dir, 'Donor23_cDC2_monocle3_cds.rds'))
-
-# Key marker pseudotime
-# 1.1. Get pseudotime from Monocle 3
 mono_pseudotime <- pseudotime(cds)
 
-# 1.2. Create a data frame to match cell names
 pseudotime_df <- data.frame(
   cell_name = names(mono_pseudotime),
   pseudotime = mono_pseudotime
@@ -870,7 +746,6 @@ pseudotime_df <- data.frame(
 
 d23.object.dc.adt.filtered.cdc2$pseudotime <- pseudotime_df[,2]
 
-# 2.1 --- Get metadata ---
 metadata_df <- d23.object.dc.adt.filtered.cdc2@meta.data
 d23.object.dc.adt.filtered.cdc2 <- ScaleData(d23.object.dc.adt.filtered.cdc2,
                                             features = rownames(d23.object.dc.adt.filtered.cdc2))
@@ -884,9 +759,8 @@ pdf(paste0(output_dir,
            "Gene_Expression_vs_Pseudotime_Donor23_RNA.pdf"), 
     width = 7, height = 5)
 
-message("Starting PDF generation...")
 
-# 3.2 --- Loop through each gene ---
+# Showing per-gene expression in pseudotime
 for (gene in genes_to_plot) {
   
   # Check if the gene is in our expression matrix
