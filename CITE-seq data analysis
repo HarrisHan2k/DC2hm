@@ -517,7 +517,7 @@ ggplot(plot_data_compare, aes(x = Expression, y = Cluster,
 
   facet_wrap(~ Marker, ncol = 3, scales = "free_x") +
   
-  # Optional: Use a pseudo-log scale if your data has negative values
+  
   # scale_x_continuous(trans = scales::pseudo_log_trans(base = 10)) +
   
   labs(
@@ -544,7 +544,6 @@ ggplot(plot_data_compare, aes(x = Expression, y = Cluster,
   # Add this to create a separate panel for each marker
   facet_wrap(~ Marker, ncol = 3, scales = "free_x") +
   
-  # Optional: Use a pseudo-log scale if your data has negative values
   # scale_x_continuous(trans = scales::pseudo_log_trans(base = 10)) +
   
   labs(
@@ -615,7 +614,7 @@ cds <- cluster_cells(cds,
 cds <- learn_graph(cds,use_partition = T,close_loop = F)
 rasterize(plot_cells(cds,
                      reduction_method = "UMAP",
-                     color_cells_by = "celltype", # Color by your original clusters
+                     color_cells_by = "celltype", 
                      label_cell_groups = TRUE,label_roots = F,label_branch_points = F,
                      label_leaves = F,
                      #label_branch_points = TRUE,
@@ -639,7 +638,6 @@ cds@colData$celltype <- factor(cds@colData$celltype,
                                levels = levels(d23.object.dc.adt.filtered))
 VlnPlot(d23.object.dc.adt.filtered, 
         features = "CytoTRACE_Score", 
-        # Use your cluster metadata column
         pt.size = 0) +
   ggtitle("CytoTRACE Score by Cluster") +
   NoLegend()
@@ -648,7 +646,7 @@ ggsave(paste0(output_dir,'CytoTRACE_Donor23_all_cell_vlnplot.pdf'),
 cds <- order_cells(cds)
 rasterize(plot_cells(cds,
                      reduction_method = "UMAP",
-                     color_cells_by = "pseudotime", # Color by your original clusters
+                     color_cells_by = "pseudotime",
                      label_cell_groups = TRUE,label_roots = F,label_branch_points = F,
                      label_leaves = F,
                      #label_branch_points = TRUE,
@@ -679,8 +677,6 @@ gene_meta <- data.frame(
   gene_short_name = rownames(counts_matrix),
   row.names = rownames(counts_matrix)
 )
-# 3.1 --- Create the Monocle 3 object ---
-message("Creating new cell_data_set (CDS)...")
 cds <- new_cell_data_set(
   expression_data = counts_matrix,
   cell_metadata = cell_meta,
@@ -702,7 +698,7 @@ cds <- learn_graph(cds,use_partition = F,
                    learn_graph_control = list(minimal_branch_len=5))
 rasterize(plot_cells(cds,
                      reduction_method = "UMAP",
-                     color_cells_by = "celltype", # Color by your original clusters
+                     color_cells_by = "celltype", 
                      label_cell_groups = TRUE,
                      label_roots = F,
                      label_branch_points = F,
@@ -720,7 +716,6 @@ ggsave(paste0(output_dir,'CytoTRACE_Donor23_cDC2_cell_feature.pdf'),
        width = 4.5, height = 3)
 VlnPlot(d23.object.dc.adt.filtered.cdc2, 
         features = "CytoTRACE_Score", 
-        # Use your cluster metadata column
         pt.size = 0) +
   ggtitle("CytoTRACE Score by Cluster") +
   NoLegend()
@@ -729,7 +724,7 @@ ggsave(paste0(output_dir,'CytoTRACE_Donor23_cDC2_vlnplot.pdf'),
 cds <- order_cells(cds)
 rasterize(plot_cells(cds,
                      reduction_method = "UMAP",
-                     color_cells_by = "pseudotime", # Color by your original clusters
+                     color_cells_by = "pseudotime", 
                      label_cell_groups = TRUE,label_roots = F,label_branch_points = F,
                      label_leaves = F,
                      #label_branch_points = TRUE,
@@ -763,20 +758,20 @@ pdf(paste0(output_dir,
 # Showing per-gene expression in pseudotime
 for (gene in genes_to_plot) {
   
-  # Check if the gene is in our expression matrix
+  
   if (!gene %in% rownames(full_expression_matrix)) {
     message(paste("Warning: Gene", gene, "not found. Skipping."))
     next # Skip to the next gene
   }
   
-  # 3.3. Create the data frame for this one gene
+  
   plot_df <- data.frame(
     expression = full_expression_matrix[gene,],
     pseudotime = metadata_df$pseudotime,
     cluster = metadata_df$celltype
   )
   
-  # 3.4. Create the ggplot object
+  
   p <- ggplot(plot_df, aes(x = pseudotime, y = expression)) +
     geom_point(aes(color = cluster), size = 0.5, alpha = 0.4) + 
     geom_smooth(method = "gam", color = "black", se = FALSE) + 
@@ -785,7 +780,7 @@ for (gene in genes_to_plot) {
     theme(plot.title = element_text(hjust = 0.5)) +
     labs(x = "Pseudotime", y = "Log-Normalized Expression")
   
-  # 3.5. Print the plot to the PDF
+  
   # 'print()' is necessary inside a loop to render the plot
   print(p)
   
@@ -806,7 +801,7 @@ pdf(paste0(output_dir,
 
 message("Starting PDF generation...")
 
-# 3.2 --- Loop through each gene ---
+
 for (gene in genes_to_plot) {
   
   # Check if the gene is in our expression matrix
@@ -815,14 +810,14 @@ for (gene in genes_to_plot) {
     next # Skip to the next gene
   }
   
-  # 3.3. Create the data frame for this one gene
+  
   plot_df <- data.frame(
     expression = full_expression_matrix[gene,],
     pseudotime = metadata_df$pseudotime,
     cluster = metadata_df$celltype
   )
   
-  # 3.4. Create the ggplot object
+  
   p <- ggplot(plot_df, aes(x = pseudotime, y = expression)) +
     geom_point(aes(color = cluster), size = 0.5, alpha = 0.4) + 
     geom_smooth(method = "gam", color = "black", se = FALSE) + 
@@ -831,7 +826,7 @@ for (gene in genes_to_plot) {
     theme(plot.title = element_text(hjust = 0.5)) +
     labs(x = "Pseudotime", y = "Log-Normalized Expression")
   
-  # 3.5. Print the plot to the PDF
+  
   # 'print()' is necessary inside a loop to render the plot
   print(p)
   
@@ -842,46 +837,34 @@ dev.off()
 
 
 # Monocle 3 Donor 6 ---------------------------------------------------------------
-#  Donor 6 all cells
+#  Donor 6 all cells, similar workflow
 counts_matrix <- GetAssayData(
   d6.object.dc.adt.filtered,
   assay = "RNA",
   slot = "counts"
 )
 d6.object.dc.adt.filtered$celltype <- Idents(d6.object.dc.adt.filtered)
-# 2.2 --- Get the cell metadata ---
+
 cell_meta <- d6.object.dc.adt.filtered@meta.data
 
-# 2.3 --- Create the gene metadata ---
-# Monocle 3 requires a 'gene_short_name' column.
 gene_meta <- data.frame(
   gene_short_name = rownames(counts_matrix),
   row.names = rownames(counts_matrix)
 )
-# 3.1 --- Create the Monocle 3 object ---
-message("Creating new cell_data_set (CDS)...")
+
 cds <- new_cell_data_set(
   expression_data = counts_matrix,
   cell_metadata = cell_meta,
   gene_metadata = gene_meta
 )
 
-# 3.2 --- Run essential Monocle 3 processing ---
-# This step calculates size factors, normalizes, and runs PCA.
-# This is NOT optional, as clustering and graph learning depend on it.
-message("Running Monocle 3 preprocess_cds (norm, log, PCA)...")
 cds <- preprocess_cds(cds, num_dim = 100)
 
-# 3.3 --- Cluster cells using Monocle 3's PCA ---
-# This creates the cell partitions/clusters used to build the graph.
-message("Running Monocle 3 cluster_cells (using PCA)...")
+
 cds <- cluster_cells(cds, reduction_method = "PCA")
-# 4.1 --- Extract Seurat UMAP coordinates ---
+
 seurat_umap_coords <- Embeddings(d6.object.dc.adt.filtered, reduction = "umap")
 
-# 4.2 --- Add Seurat UMAP to the CDS object ---
-# This overwrites any existing UMAP in the cds object.
-message("Injecting Seurat UMAP coordinates into CDS...")
 reducedDims(cds)[["UMAP"]] <- seurat_umap_coords
 
 cds <- cluster_cells(cds, 
@@ -889,7 +872,7 @@ cds <- cluster_cells(cds,
 cds <- learn_graph(cds,use_partition = T,close_loop = F)
 rasterize(plot_cells(cds,
                      reduction_method = "UMAP",
-                     color_cells_by = "celltype", # Color by your original clusters
+                     color_cells_by = "celltype", 
                      label_cell_groups = TRUE,label_roots = F,label_branch_points = F,
                      label_leaves = F,
                      #label_branch_points = TRUE,
@@ -909,7 +892,7 @@ ggsave('02_Clustering/Monocle3_inferred trajectory.pdf',
 
 rasterize(plot_cells(cds,
                      reduction_method = "UMAP",
-                     color_cells_by = "pseudotime", # Color by your original clusters
+                     color_cells_by = "pseudotime", 
                      label_cell_groups = TRUE,label_roots = F,label_branch_points = F,
                      label_leaves = F,
                      #label_branch_points = TRUE,
@@ -932,7 +915,6 @@ cds@colData$celltype <- factor(cds@colData$celltype,
                                levels = levels(d6.object.dc.adt.filtered))
 VlnPlot(d6.object.dc.adt.filtered, 
         features = "CytoTRACE_Score", 
-        # Use your cluster metadata column
         pt.size = 0) +
   ggtitle("CytoTRACE Score by Cluster") +
   NoLegend()
@@ -941,7 +923,7 @@ ggsave(paste0(output_dir,'CytoTRACE_Donor6_all_cell_vlnplot.pdf'),
 cds <- order_cells(cds)
 rasterize(plot_cells(cds,
                      reduction_method = "UMAP",
-                     color_cells_by = "pseudotime", # Color by your original clusters
+                     color_cells_by = "pseudotime", 
                      label_cell_groups = TRUE,label_roots = F,label_branch_points = F,
                      label_leaves = F,
                      #label_branch_points = TRUE,
@@ -966,17 +948,14 @@ counts_matrix <- GetAssayData(
   assay = "RNA",
   slot = "counts"
 )
-# 2.2 --- Get the cell metadata ---
+
 cell_meta <- d6.object.dc.adt.filtered.cdc2@meta.data
 
-# 2.3 --- Create the gene metadata ---
-# Monocle 3 requires a 'gene_short_name' column.
 gene_meta <- data.frame(
   gene_short_name = rownames(counts_matrix),
   row.names = rownames(counts_matrix)
 )
-# 3.1 --- Create the Monocle 3 object ---
-message("Creating new cell_data_set (CDS)...")
+
 cds <- new_cell_data_set(
   expression_data = counts_matrix,
   cell_metadata = cell_meta,
@@ -984,12 +963,8 @@ cds <- new_cell_data_set(
 )
 cds <- preprocess_cds(cds, num_dim = 100)
 
-# 3.3 --- Cluster cells using Monocle 3's PCA ---
-# This creates the cell partitions/clusters used to build the graph.
-message("Running Monocle 3 cluster_cells (using PCA)...")
 cds <- cluster_cells(cds, 
                      reduction_method = "PCA")
-# 4.1 --- Extract Seurat UMAP coordinates ---
 seurat_umap_coords <- Embeddings(d6.object.dc.adt.filtered.cdc2,
                                  reduction = "umap")
 
@@ -1001,7 +976,7 @@ cds <- learn_graph(cds,use_partition = F,
                    close_loop = F)
 rasterize(plot_cells(cds,
                      reduction_method = "UMAP",
-                     color_cells_by = "celltype", # Color by your original clusters
+                     color_cells_by = "celltype", 
                      label_cell_groups = TRUE,
                      label_roots = F,
                      label_branch_points = F,
@@ -1030,7 +1005,6 @@ ggsave(paste0(output_dir,'CytoTRACE_Donor6_cDC2_cell_feature.pdf'),
        width = 4.5, height = 3)
 VlnPlot(d6.object.dc.adt.filtered.cdc2, 
         features = "CytoTRACE_Score", 
-        # Use your cluster metadata column
         pt.size = 0) +
   ggtitle("CytoTRACE Score by Cluster") +
   NoLegend()
@@ -1039,7 +1013,7 @@ ggsave(paste0(output_dir,'CytoTRACE_Donor6_cDC2_vlnplot.pdf'),
 cds <- order_cells(cds)
 rasterize(plot_cells(cds,
                      reduction_method = "UMAP",
-                     color_cells_by = "pseudotime", # Color by your original clusters
+                     color_cells_by = "pseudotime", 
                      label_cell_groups = TRUE,label_roots = F,label_branch_points = F,
                      label_leaves = F,
                      #label_branch_points = TRUE,
@@ -1050,11 +1024,8 @@ ggsave('02_Clustering/Monocle3_inferred pseudotime_cDC2.pdf',
        width = 4.2, height = 3)
 saveRDS(cds, paste0(output_dir, 'Donor6_cDC2_monocle3_cds.rds'))
 
-# Key marker pseudotime
-# 1.1. Get pseudotime from Monocle 3
 mono_pseudotime <- pseudotime(cds)
 
-# 1.2. Create a data frame to match cell names
 pseudotime_df <- data.frame(
   cell_name = names(mono_pseudotime),
   pseudotime = mono_pseudotime
@@ -1062,12 +1033,11 @@ pseudotime_df <- data.frame(
 
 d6.object.dc.adt.filtered.cdc2$pseudotime <- pseudotime_df[,2]
 
-# 2.1 --- Get metadata ---
 metadata_df <- d6.object.dc.adt.filtered.cdc2@meta.data
 d6.object.dc.adt.filtered.cdc2 <- ScaleData(d6.object.dc.adt.filtered.cdc2,
                                             features = rownames(d6.object.dc.adt.filtered.cdc2))
 
-genes_to_plot <- read.csv('../Code deposit/scRNA-seq analysis/Highlighted_gene_selected.csv')$Gene[4:31]
+genes_to_plot <- read.csv('Highlighted_gene_selected.csv')$Gene[4:31]
 full_expression_matrix <- GetAssayData(d6.object.dc.adt.filtered.cdc2, 
                                        assay = "RNA", 
                                        slot = "data")
@@ -1131,25 +1101,21 @@ pdf(paste0(output_dir,
            "Gene_Expression_vs_Pseudotime_Donor6_ADT.pdf"), 
     width = 7, height = 5)
 
-message("Starting PDF generation...")
 
 # 3.2 --- Loop through each gene ---
 for (gene in genes_to_plot) {
   
-  # Check if the gene is in our expression matrix
   if (!gene %in% rownames(full_expression_matrix)) {
     message(paste("Warning: Gene", gene, "not found. Skipping."))
     next # Skip to the next gene
   }
   
-  # 3.3. Create the data frame for this one gene
   plot_df <- data.frame(
     expression = full_expression_matrix[gene,],
     pseudotime = metadata_df$pseudotime,
     cluster = metadata_df$celltype
   )
   
-  # 3.4. Create the ggplot object
   p <- ggplot(plot_df, aes(x = pseudotime, y = expression)) +
     geom_point(aes(color = cluster), size = 0.5, alpha = 0.4) + 
     geom_smooth(method = "gam", color = "black", se = FALSE) + 
@@ -1157,8 +1123,6 @@ for (gene in genes_to_plot) {
     theme_minimal() +
     theme(plot.title = element_text(hjust = 0.5)) +
     labs(x = "Pseudotime", y = "Log-Normalized Expression")
-  
-  # 3.5. Print the plot to the PDF
   # 'print()' is necessary inside a loop to render the plot
   print(p)
   
