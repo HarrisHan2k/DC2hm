@@ -26,6 +26,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ---
 
 ## Contact
-For questions or collaborations, please contact Harris Han(HarrisHan@hotmail.com) or the corresponding author Dr. Liang Cheng (liangcheng@whu.edu.cn)
+For questions or collaborations, please contact Harris Han(HarrisHan@hotmail.com) or the corresponding author Dr. Liang Cheng (liangcheng@whu.edu.cn). Note that Dr. Qiu-Chen Zhao (qz305@cam.ac)and Dr. Hao Yang (yanghao@whu.edu.cn) also contributed a lot to this project, especially the preprocessing of the scATAC-seq and CyTOF data (Qiu-Chen) and comparative analysis with skin DCs (Hao), contacting these two brilliant researchers is highly recommended if there is related questions.
 
 ---
