@@ -105,7 +105,6 @@ ggsave('Outputs/figures/Barplot_LFC_comparison_tslp_induced.pdf',
        width = 6, height = 2.5) 
 
 
-
 # TSLP-cDC2s vs Med-cDC2s -------------------------------------------------
 counts.tslp.vs.med <- read.csv('Counts_with_Med-cDC2s.csv', row.names = 1)
 counts.tslp.vs.med <- counts.tslp.vs.med[,c(1:6)]
@@ -180,34 +179,12 @@ ggsave('Outputs/figures/STAT5_inhibiting_barplot.pdf', width = 6, height = 2.3)
 
 
 
-# Comparing LC markers ----------------------------------------------------
 
-lc.markers <- c("CD1A", "CD14", "CD207",'LY75', "MRC1", 
-                "CD209", "CDH1", "MMP12", "CCL22", "CCL17", "CCR2", 
-                "CCR6", "CCR7", "CXCR4")
-lfc.comparison.df <- rbind(de.result.med.vs.fresh[lc.markers,],
-                           de.result.tslp.vs.fresh[lc.markers,])
-lfc.comparison.df$Comparison <- c(rep('Med-cDC2s',length(lc.markers)),
-                                  rep('TSLP-cDC2s', length(lc.markers)))
-lfc.comparison.df$Gene <- factor(rep(lc.markers,2),
-                                 levels = lc.markers)
-ggplot(lfc.comparison.df, aes(x=Gene, y=logFC, fill=Comparison))+
-  geom_bar(stat = 'identity', position = 'dodge',width = 0.5)+
-  scale_fill_manual(values = c('#ffb3c6','#fb6f92'))+
-  theme_classic()+
-  geom_hline(yintercept = c(1), linetype='dashed',color='grey')+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+# Process blood DC seq data (GSE59237) ---------------------------------------------
 
-
-# Process blood DC sequencing ---------------------------------------------
-
-# Load the libraries
 library(GEOquery)
 library(limma)
 
-# Step 2: Download and unpack the RAW .CEL files
-# -----------------------------------------------------------------
-# This downloads the supplementary file archive containing the .CEL files
 getGEOSuppFiles("GSE59237")
 
 # Unpack the .tar archive. This creates a directory with the .CEL.gz files
@@ -217,11 +194,9 @@ untar("GSE59237/GSE59237_RAW.tar", exdir = "GSE59237/CEL_files")
 cel_files <- list.files("GSE59237/CEL_files", pattern = "\\.CEL\\.gz$", full.names = TRUE)
 print(cel_files)
 
-# Step 3: Read raw data and perform GC-RMA Normalization
-# -----------------------------------------------------------------
 # Read the raw .CEL files into an AffyBatch object
 raw_data <- ReadAffy(filenames = cel_files)
-
+# Here GC-RMA normalization was performed according to the original paper
 cat("Performing GC-RMA normalization (this may take a few minutes)...\n")
 eset <- gcrma(raw_data)
 cat("Normalization with GC-RMA complete. ✅\n")
@@ -287,9 +262,7 @@ final_de_table <- final_de_table %>% dplyr::select(-Gene_Symbol)
 cat("\n## Preview of TSLP vs. Fresh DE results table (GC-RMA normalized):\n")
 print(head(final_de_table))
 
-# Step 8: Intersect with Your RNA-seq Data and Save Venn Diagrams
-# -----------------------------------------------------------------
-# This step requires your `de.result.tslp.vs.fresh` object to be in the environment
+
 sig_threshold_adj_p <- 0.05
 microarray_sig_genes <- final_de_table[final_de_table$adj.P.Val < sig_threshold_adj_p, ]
 
