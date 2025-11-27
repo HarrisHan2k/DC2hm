@@ -8,10 +8,10 @@ library(tidyr)
 library(dplyr)
 library(tibble)
 library(stringr)
-setwd("/media/dell/0E54E2B554E29EA9/HanRunpeng/mregDC_project/Lab_Sequencing_Data/Code deposit/Analysis on sorted cDCs")
+setwd("Analysis on sorted cDCs")
 # Read the counts and the Seurat d6.object.cdcs -----------------------------------
-d6.object.cdcs <- readRDS('../scRNA-seq analysis/Outputs/rds/Dnr6_cDCs.rds')
-d2.counts <- read.csv('Dnr2_DC_counts.csv',row.names = 1)
+d6.object.cdcs <- readRDS('Dnr6_cDCs.rds') # Available @ GSE267253
+d2.counts <- read.csv('Dnr2_DC_counts.csv',row.names = 1) # Available @ GSE287912
 # Analysis and generate panels for Figure 2F----------------------------------------------------------------
 fdata <- d2.counts
 #IL7R_p_CCR7_p
