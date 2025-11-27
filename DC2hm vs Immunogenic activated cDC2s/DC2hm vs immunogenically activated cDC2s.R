@@ -2,13 +2,14 @@ library(pacman)
 p_load(sva, limma, pheatmap, ggplot2, ggplotify, dplyr, openxlsx,
        clusterProfiler,tidyverse, ggrepel, Seurat, ggsci, ComplexHeatmap,
        circlize, enrichplot, TissueEnrich, RColorBrewer, ggplotify) 
-set.seed(0822)
-setwd('/media/dell/0E54E2B554E29EA9/HanRunpeng/mregDC_project/Lab_Sequencing_Data/Code deposit/DC2hm vs Immunogenic activated cDC2s')
+set.seed(0822) # My birthday actually :-)
+setwd('DC2hm vs Immunogenic activated cDC2s')
+# The gmt files for GSEA analysis could be obtained from Molecular Signatures Database (MSigDB)
 # DE analysis on immunogenically activated cDC2s --------------------------
   # PAMP-cDC2s vs Ctr cDC2s
     # This is a batch-corrected (ComBat) matrix from 2 experiments including one with LPS+IFNg group that was anaylzed below
 pamp.cdc2s.counts <- read.csv('Combined_PAMP_counts_batch_corrected.csv',
-                              row.names = 1, check.names = F)
+                              row.names = 1, check.names = F) # Available @ GSE287910
   
 group <- c(rep('cDC2_Ctr',5),
            rep('cDC2_PAMP',6))
@@ -27,7 +28,7 @@ write.xlsx(list('DE results'=pamp.vs.ctr.result,
   # LPS+IFN-g vs Ctr cDC2s
     # A PAMPs-stimulated group is also contained in this experiments
 ifng.cdc2.counts <- read.csv('LPS+IFNg_or_PAMP_vs_Ctr_cDC2s_counts.csv',
-                             row.names = 1, check.names = F)
+                             row.names = 1, check.names = F) Available @ GSE287910
 group <- factor(c(rep('Ctr',3),
                   rep('IFNG_LPS',3),
                   rep('PAMP',3)))
@@ -50,7 +51,7 @@ write.xlsx(list('DE results'=ifng.lps.result,
 # DE analysis on DC2hm ----------------------------------------------------
   # Single-cell results
     # Read rds files
-d6.object <- readRDS('../scRNA-seq analysis/Outputs/rds/Dnr6_cDC2s.rds')
+d6.object <- readRDS('../scRNA-seq analysis/Outputs/rds/Dnr6_cDC2s.rds') # Could be obtained @ GEO
     # Perform DE analysis and save results
 scrna.degs <- FindMarkers(d6.object, ident.1 = 'DC2hm', ident.2 = 'cDC2',
                           min.pct = 0, logfc.threshold = 0)
@@ -107,8 +108,8 @@ ggsave('Outputs/figures/Barplot_lfc_DC2hm_scRNA_vs_immunogenic.pdf',
        width = 10.5, height = 3)
   # Sorted cDCs
 sorted.dc2hm.counts <- read.csv('DC2hm_cDC2_batch_corrected_counts.csv',
-                                row.names = 1, check.names = F)
-    # Filter lowly expressed genes
+                                row.names = 1, check.names = F) # Individual counts could be obtained from GSE287912
+    # Filter lowly expressed genes for more robust limma-voom analysis
 sorted.dc2hm.counts <- sorted.dc2hm.counts[rowSums(sorted.dc2hm.counts)>40, ]
 group <- c(rep('cDC2',4),
            rep('DC2hm',4))
