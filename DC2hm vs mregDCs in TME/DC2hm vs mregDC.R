@@ -6,25 +6,22 @@ library(clusterProfiler)
 library(openxlsx)
 library(enrichplot)
 set.seed(0822)
-setwd('/media/dell/0E54E2B554E29EA9/HanRunpeng/mregDC_project/Lab_Sequencing_Data/Code deposit/DC2hm vs mregDCs in TME')
+setwd('DC2hm vs mregDCs in TME')
 # Visualization of scRNA-seq profiles -------------------------------------
   # Read Seurat object
 combined.object <- readRDS('combined.object.dc2hm.mregdc.rds')
 
-  # Figure S8B, t-SNE plot of binary-grouped profiles
 rasterize(DimPlot(combined.object, group.by = 'binary.group',
                   pt.size = 0.1,reduction = 'tsne',
                   cols = rev(c('#70d6ff','#ff70a6'))),
           dpi = 300)
 ggsave('Outputs/figures/TNSE_group.pdf', 
        width = 4.5, height = 3)
-  # Figure S8B, t-SNE plot of sample-grouped profiles
 rasterize(DimPlot(combined.object, group.by = 'orig.ident',
                   pt.size = 0.1,reduction = 'tsne')+
             scale_color_npg(), dpi = 300)
 ggsave('Outputs/figures/TNSE_samplep.pdf', 
        width = 4.5, height = 3)
-  # Figure S8C, showing CCR7 and LAMP3 expression to ensure they are mature DCs
 plt.list <- list()
 for (i in c('FLT3','CCR7','LAMP3','CRLF2')) {
   p <- rasterize(FeaturePlot(combined.object, features = i,
@@ -37,7 +34,6 @@ for (i in c('FLT3','CCR7','LAMP3','CRLF2')) {
 ggarrange(plotlist = plt.list, ncol = 4)
 ggsave('Outputs/figures/Feature_plots_DC_maturation.pdf',
        width = 16, height = 4)
-  # Figure S8D, dot plot showing selected gene expression in the 2 groups
 DotPlot(combined.object, features = c('CRLF2','IL7R','IDO2','AHR',
                                       'ZEB2','ETS2','HIVEP1','HIVEP2','ETV6','TET2',
                                       'BCL2','BIRC6',
@@ -86,7 +82,6 @@ gsea.hallmark.show <- tumor.vs.spleen.dc3.hallmark@result
 gsea.hallmark.show$Description <- factor(gsea.hallmark.show$Description,
                                          levels = gsea.hallmark.show[order(gsea.hallmark.show$NES),
                                                                      'Description'])
-  # Figure S8E, bar plot showing the Hallmark GSEA results
 ggplot(gsea.hallmark.show, aes(x=NES, y=Description, fill=-log10(p.adjust)))+
   geom_bar(stat = 'identity')+
   theme_classic()+
