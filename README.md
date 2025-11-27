@@ -6,7 +6,7 @@ This repository contains the analysis pipelines, data preprocessing scripts, and
 ---
 
 ## Data and Results
-- **Raw Data:** Raw Input datasets, as well as processed Seurat (rds) or Scanpy (h5ad) objects are available @ GEO.
+Raw Input datasets, as well as processed Seurat (rds) or Scanpy (h5ad) objects are available @ GEO.
 
 ---
 
