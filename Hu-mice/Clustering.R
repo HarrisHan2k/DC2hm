@@ -4,8 +4,9 @@ library(ggpubr)
 library(harmony)
 library(ggrastr)
 library(viridis)
-setwd("/media/dell/0E54E2B554E29EA9/HanRunpeng/mregDC_project/Lab_Sequencing_Data/Code deposit/Hu-mice")
-
+setwd("Hu-mice")
+# The Raw data is available @ GSE289224, Cellranger was run using the default parameters.
+# filtered_feature_bc_matrix could be avialable upon reqeust if there is trouble in runing Cellranger on reads @ SRA
 # QC ----------------------------------------------------------------------
 work.list <- c("MOCK_1","MOCK_3","TSLP_1", "TSLP_2_3")
 PlotQC <- function(project){
