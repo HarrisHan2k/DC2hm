@@ -22,7 +22,7 @@ library(ggsci)
 set.seed(0822)
 setwd('scMulti-omics analysis')
 # The preprocessing and clustering analysis was performed by Qiu-Chen
-# Start with this processed object which could be obtained @GEO: GSE267255
+# Start with this processed object which could be obtained @ GEO: GSE267255
 # Clustering and marker analysis on cDCs ----------------------------------
 multiomic.object <- readRDS('hu_spleen_multiomics.rds')
 # Update nomenclature
