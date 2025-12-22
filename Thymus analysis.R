@@ -11,7 +11,7 @@ library(ggplotify)
 library(pheatmap)
 library(lsa)
 set.seed(0822)
-setwd("/media/dell/0E54E2B554E29EA9/HanRunpeng/mregDC_project/Lab_Sequencing_Data/Code deposit/Analysis on E-MTAB-8581(thymus atlas)")
+setwd("Analysis on E-MTAB-8581(thymus atlas)")
   # The RDS file could be obtained @https://developmental.cellatlas.io/thymus-development and converveted from h5ad to rds
 thymus.object <- readRDS('../../../thymus data/hu_thymus.rds')
 # mTEC clustering analysis ------------------------------------------------
@@ -26,23 +26,22 @@ thymus.object.mTEC <- RunHarmony(thymus.object.mTEC,
                                  group.by.vars = 'Sample')
 thymus.object.mTEC <- RunUMAP(thymus.object.mTEC, dims = 1:5,
                               reduction = 'harmony')
-  # Figure 4C, UMAP of mTECs
 rasterize(DimPlot(thymus.object.mTEC,
                   group.by = 'Anno_level_fig1',
                   pt.size = .1)+
             scale_color_simpsons(),dpi = 300)
 ggsave('Outputs/figures/_mTEC.pdf', width = 4, height = 3)
-  # Figure S4A, mTEC subtype marker
+  # mTEC subtype marker
 DotPlot(thymus.object.mTEC, features = c('CD80','CD40','AIRE',
                                          'IVL','BIK','GADD45G'))+
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5))+
   scale_color_viridis_c()
 ggsave('Outputs/figures/Dotplot_mTECs.pdf', width = 8, height = 4)
- # Figure 4F, DC2hm signature scores
+ # DC2hm signature scores
 thymus.object.mTEC <- AddModuleScore(thymus.object.mTEC,
                                             list(read.xlsx('../Analysis on sorted cDCs/Outputs/tables/Signature_genes.xlsx',
                                                           sheet = 'IL7RpCCR7p')$genes),
-                                            name = 'IL7RpCCR7p.score')
+                                            name = 'IL7RpCCR7p.score') # Run the signature score in Analysis on sorted cDCs first
 Idents(thymus.object.mTEC) <- 'Anno_level_fig1'
 VlnPlot(thymus.object.mTEC, features = 'IL7RpCCR7p.score1', pt.size = 0)+
   scale_fill_simpsons()
@@ -53,7 +52,7 @@ rasterize(FeaturePlot(thymus.object.mTEC, features = 'IL7RpCCR7p.score1',
 ggsave('Outputs/figures/Featureplot_IL7R+CCR7+_score_mTECs.pdf',
        width = 4, height = 3)
 # mTEC signature expression in cDCs -----------------------------------------------
-  # Figure S4C, canonical mTEC marker expression in cDCs
+  # canonical mTEC marker expression in cDCs
 # Show mTEC marker dotplot
 combined.object <- readRDS('../scRNA-seq analysis/Outputs/rds/combined.object.rds')
 gene_names <- c(
@@ -78,7 +77,7 @@ for (i in levels(thymus.object.mTEC$Anno_level_fig1)) {
 }
 openxlsx::write.xlsx(markers.list,
                      'Outputs/tables/mTECs_cluster_markers.xlsx',rowNames=T)
-  # Figure S4B, mTEC II signature score
+  # mTEC II signature score
 mtec2.markers <- read.xlsx('Outputs/tables/mTECs_cluster_markers.xlsx',
                            sheet = "mTEC(II)", rowNames = T)
 d6.object <- AddModuleScore(d6.object,
@@ -100,7 +99,7 @@ rasterize(FeaturePlot(d6.object, features = 'mTEC.II.score1',
                       pt.size = .1)+
             scale_color_viridis_c(option = 4), dpi = 300)
 
-# Figure 4D and G, densities of mTECs positve for DC2hm markers
+# Densities of mTECs positve for DC2hm markers
 plt.list <- list()
 for (i in c('AIRE','CCR7','IL7R', 'CRLF2','STAT5A')) {
   plt.list[[i]] <- rasterize(as.ggplot(Plot_Density_Custom(thymus.object.mTEC, features = i,
@@ -112,7 +111,7 @@ ggsave('Outputs/figures/Marker_density_mTEC.pdf', width = 24, height = 4)
 Plot_Density_Joint_Only(seurat_object = thymus.object.mTEC, features = c('AIRE','CCR7','IL7R', 'CRLF2','STAT5A'))
 
 
-# Figure 4E Cosine similarity -------------------------------------------------------
+# Cosine similarity -------------------------------------------------------
 cdc.pseudubulk <- AverageExpression(combined.object, assays = "RNA", slot = "data")$RNA
 mtec.pseudobulk <- AverageExpression(thymus.object.mTEC, assays = "RNA", slot = "data")$RNA
 common_genes <- intersect(VariableFeatures(combined.object), rownames(thymus.object.dc.and.mtec))
