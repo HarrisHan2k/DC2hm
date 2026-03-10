@@ -10,6 +10,11 @@ Raw Input datasets, as well as processed Seurat (rds) or Scanpy (h5ad) objects a
 
 ---
 
+## Publication
+The manuscript is now avaialable at [Immunity](https://www.cell.com/immunity/abstract/S1074-7613(26)00050-6)
+
+---
+
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
